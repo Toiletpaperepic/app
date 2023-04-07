@@ -1,0 +1,16 @@
+{
+    "qemu_bin": "/usr/bin/qemu-system-x86_64",
+    "novnc_bin": "/home/debian/websockify/run",
+    "qemu_vnc_start_port": 5901,
+    "novnc_port": 6080,
+    "vm_slots": 10,
+    "qemu_args": [
+        "-m 512",
+        "-no-reboot"
+    ],
+    "novnc_args": [
+        "--web ../noVNC/",
+        "--cert ../app/novnc.pem",
+        "--target-config ../app/config/token.list"
+    ]
+}
