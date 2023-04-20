@@ -6,9 +6,6 @@ pub(crate) fn make(mut qenu_port: i32, vm_slots: i32) -> Vec<i32> {
     let stop = qenu_port + vm_slots;
     
     loop {
-        let line = format!("port{}: localhost:{}\n", qenu_port ,qenu_port);
-        token_list.write(line.as_bytes()).expect("failed to write to the log file.");
-
         vec.push(qenu_port);
         qenu_port += 1;
 
