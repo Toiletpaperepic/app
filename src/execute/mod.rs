@@ -10,43 +10,50 @@
 use std::process::Command;
 
 use log::debug;
+use rocket::{fairing::{Fairing, Info, self, Kind}, Rocket, Build, State};
 
+use crate::config;
+
+#[derive(Default, Clone)]
 pub(crate) struct VmsManager {
+    pub qemu_args: Vec<String>,
     pub qemu_bin: String,
-    pub vm_slots: Vec<i32>,
-    pub qemu_args: Vec<String>
-    //pub config_json: Args
+    pub vm_slots: Vec<i32>
 }
 
-impl<'a> VmsManager {
-    pub fn new(qemu_args: Vec<String>, qemu_bin: String, vm_slots: Vec<i32>) -> VmsManager { 
-        debug!("Running VmsManager");
-        VmsManager {
-            qemu_args,
-            qemu_bin,
-            vm_slots
-            //config_json,
+#[rocket::async_trait]
+impl Fairing for VmsManager {
+    fn info(&self) -> Info {
+        Info {
+            name: "VmsManager",
+            kind: Kind::Ignite | Kind::Request
         }
     }
 
-    pub fn start_qemu(&mut self) { 
-        let port = self.vm_slots[0];
-        self.qemu_args.push("-vnc ".to_owned());
-        self.qemu_args.push(format!(":{},websocket", port - 5900));
-        println!("{:?}", &self.qemu_args);
+    async fn on_ignite(&mut self, rocket: Rocket<Build>) -> fairing::Result { 
+        debug!("Running VmsManager");
+        let config = config::config();
 
-        let mut child = Command::new(&self.qemu_bin)
-        .args(&self.qemu_args)
-        .spawn()
-        .expect("command failed to start");
+        self.qemu_args = config.0;
+        self.qemu_bin = config.1;
+        self.vm_slots = config.2;
 
-        // // println!("status: {}", output.status);
-        // let ecode = child.wait()
-        //          .expect("failed to wait on child");
+        #[get("/start_qemu")]
+        fn start_qemu(vms: &State<VmsManager>) -> String { 
+            let port = vms.vm_slots[0];
+            let mut args = vms.qemu_args.clone();
+            args.push("-vnc ".to_owned());
+            args.push(format!(":{},websocket", port - 5900));
+            println!("{:?}", args);
+    
+            Command::new(vms.qemu_bin.clone())
+            .args(args)
+            .spawn()
+            .expect("command failed to start");
 
-        // println!("vm stop {}", ecode.success());
-        // let len = self.vm_slots.len();
-        // println!("{:?}", self.vm_slots.rotate_left(len));
-        // self.vm_slots
+            "ok".to_string()
+        }
+
+        Ok(rocket.manage(self.clone()).mount("/", routes![start_qemu]))
     }
 }
