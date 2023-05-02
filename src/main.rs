@@ -3,7 +3,7 @@
 //
 //               xxxxxxxxxxxxxxxxxxxx
 //
-//https://github.com/Toiletpaperepic/xxxxxxxxxxxxx
+//https://github.com/Toiletpaperepic/app
 //
 //=================================================
 
@@ -12,9 +12,9 @@
 #[macro_use] extern crate rocket;
 
 use log::{debug, error, info, warn};
-use std::{io::stdin, process::{self, Command}, thread};
-use rocket::{fs::FileServer, Rocket, Build, fairing::AdHoc};
-use crate::execute::VmsManager;
+use crate::execute::VirtualMachines;
+use crate::execute::start_qemu;
+use rocket::fs::{relative, FileServer};
 mod execute;
 mod env_logger;
 mod config;
@@ -29,11 +29,15 @@ fn hello() -> &'static str {
 fn rocket() -> _ {
     env_logger::env_logger();
     info!("Starting App_Untitled. (version: {})", env!("CARGO_PKG_VERSION"));
-
+    let config = config::config();
     info!("Finished");
 
     rocket::build()
-        .attach(VmsManager::default())
-        .mount("/", routes![hello])
-        .mount("/noVNC", FileServer::from("./lib/noVNC"))
+        .manage(VirtualMachines {
+            qemu_args: config.0,
+            qemu_bin: config.1,
+            machine_data: config.2.into()
+        })
+        .mount("/api", routes![hello, start_qemu])
+        .mount("/", FileServer::from(relative!("static")))
 }

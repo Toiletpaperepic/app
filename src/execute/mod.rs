@@ -3,57 +3,41 @@
 //
 //               xxxxxxxxxxxxxxxxxxxx
 //
-//https://github.com/Toiletpaperepic/xxxxxxxxxxxxx
+//https://github.com/Toiletpaperepic/app
 //
 //=================================================
 
 use std::process::Command;
+use crate::config::vm_slots::Slot;
+use rocket::{State, serde::json::{Value, json}};
 
-use log::debug;
-use rocket::{fairing::{Fairing, Info, self, Kind}, Rocket, Build, State};
-
-use crate::config;
-
-#[derive(Default, Clone)]
-pub(crate) struct VmsManager {
+pub(crate) struct VirtualMachines {
     pub qemu_args: Vec<String>,
     pub qemu_bin: String,
-    pub vm_slots: Vec<i32>
+    pub machine_data: Vec<Slot>
 }
 
-#[rocket::async_trait]
-impl Fairing for VmsManager {
-    fn info(&self) -> Info {
-        Info {
-            name: "VmsManager",
-            kind: Kind::Ignite | Kind::Request
-        }
-    }
-
-    async fn on_ignite(&mut self, rocket: Rocket<Build>) -> fairing::Result { 
-        debug!("Running VmsManager");
-        let config = config::config();
-
-        self.qemu_args = config.0;
-        self.qemu_bin = config.1;
-        self.vm_slots = config.2;
-
-        #[get("/start_qemu")]
-        fn start_qemu(vms: &State<VmsManager>) -> String { 
-            let port = vms.vm_slots[0];
+#[get("/start_qemu")]
+pub(crate) fn start_qemu(vms: &State<VirtualMachines>) -> Value { 
+    for slot in &vms.machine_data {
+        let mut used = slot.used.lock().unwrap();
+        if *used {
+            //
+        } else {
             let mut args = vms.qemu_args.clone();
-            args.push("-vnc ".to_owned());
-            args.push(format!(":{},websocket", port - 5900));
+            args.push("-vnc".to_owned());
+            args.push(format!(":{},websocket", slot.port - 5700));
             println!("{:?}", args);
-    
-            Command::new(vms.qemu_bin.clone())
+
+            let vm = Command::new(vms.qemu_bin.clone())
             .args(args)
             .spawn()
             .expect("command failed to start");
 
-            "ok".to_string()
+            *used = true;
+            return json!({"status": "ok", "slot number": slot.slot_number, "url": format!("/noVNC/vnc.html?path=&port={}", slot.port)})
         }
-
-        Ok(rocket.manage(self.clone()).mount("/", routes![start_qemu]))
     }
+
+    json!({"status": "failed", "Reason": "No slots open."})
 }
