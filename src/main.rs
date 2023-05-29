@@ -11,33 +11,41 @@
 
 #[macro_use] extern crate rocket;
 
-use log::{debug, error, info, warn};
-use crate::execute::VirtualMachines;
-use crate::execute::start_qemu;
-use rocket::fs::{relative, FileServer};
-mod execute;
+use rocket::{
+    fs::{relative, FileServer}
+};
+use crate::execute::{
+    VirtualMachines, statistics, start_qemu, stop_qemu
+};
+use common::test_run;
+use log::info;
 mod env_logger;
+mod execute;
 mod config;
-
-#[get("/hello")]
-fn hello() -> &'static str {
-    //vm.start_qemu();
-    "Hello, world!"
-}
+mod common;
 
 #[launch]
 fn rocket() -> _ {
     env_logger::env_logger();
     info!("Starting App_Untitled. (version: {})", env!("CARGO_PKG_VERSION"));
     let config = config::config();
-    info!("Finished");
+    let version_msg = test_run(config.1.clone());
+    info!("launching Rocket");
+
+    // let config = Config {
+    //     port: 7777,
+    //     address: Ipv4Addr::new(18, 127, 0, 1).into(),
+    //     temp_dir: "/tmp/config-example".into(),
+    //     ..Config::debug_default()
+    // };
 
     rocket::build()
         .manage(VirtualMachines {
             qemu_args: config.0,
             qemu_bin: config.1,
-            machine_data: config.2.into()
+            virtual_machine_data: config.3.into(),
+            version_msg : version_msg.unwrap()
         })
-        .mount("/api", routes![hello, start_qemu])
-        .mount("/", FileServer::from(relative!("static")))
+        .mount("/api", routes![stop_qemu, start_qemu, statistics])
+        .mount("/", FileServer::from(config.2))
 }

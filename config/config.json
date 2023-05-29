@@ -1,7 +1,7 @@
 {
     "qemu_bin": "C:/Program Files/msys64/ucrt64/bin/qemu-system-x86_64.exe",
-    "qemu_vnc_start_port": 5700,
+    "vnc_start_port": 5700,
+    "static_files": "static",
     "server_port": 6080,
-    "vm_slots": 10,
-    "qemu_args": "e:/iso/archlinux-2022.07.01-x86_64.iso -m 512 -no-reboot"
+    "vm_slots": 10
 }
