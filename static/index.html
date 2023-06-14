@@ -3,12 +3,23 @@
   <head>
     <meta charset="utf-8">
     <title>app</title>
+    <link rel="stylesheet" href="/style.css">
+    <link rel="stylesheet" href="/windows/style.css">
+    <script src="https://unpkg.com/webamp"></script>
     <script src="/script.js" charset="utf-8" defer></script>
+    <script src="/windows/script.js" charset="utf-8" defer></script>
   </head>
+  <div id="app"></div>
+  <div class="popup">
+    <div class="popup-header">Click here to move</div>
+    <iframe id="iframe" src="/noVNC/vnc.html?path=&port=5700" width="800" height="600" frameborder="0" webkitallowfullscreen="true" mozallowfullscreen="true" allowfullscreen></iframe>
+  </div>
   <body>
     <main>
-        <form id="button">
-          <button type="submit">+</button>
+      <div class="card">
+        <input type="text" class="search-bar" placeholder="Search">
+        <form id=".button">
+          <button type="submit">submit</button>
         </form>
       </div>
     </main>

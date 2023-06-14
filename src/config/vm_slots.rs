@@ -7,13 +7,30 @@
 //
 //=================================================
 
-use std::{sync::{Mutex, Arc}, process::Child};
+use std::{sync::{Mutex, Arc}, process::Child, io::{self, Error, ErrorKind}};
 
 pub(crate) struct Slot {
-    pub used: Arc<Mutex<bool>>,
-    pub slot_number: u16,
+    pub slot_number: i32,
     pub port: u16,
     pub child: Arc<Mutex<Option<Child>>>
+}
+
+impl Slot {
+    pub fn is_used(&self) -> io::Result<bool> {
+        let mut child_lock = self.child.lock().unwrap();
+
+        if child_lock.is_none() {
+            return Ok(false);
+        }
+
+        return match child_lock.as_mut().unwrap().try_wait() {
+            Ok(Some(..)) => Ok(true),
+            Ok(None) => {
+                Ok(false)
+            }
+            Err(e) => Err(Error::new(ErrorKind::Other, format!("error attempting to wait: {e}").as_str())),
+        };
+    }
 }
 
 pub(crate) fn make(mut qenu_port: u16, vm_slots: i32) -> Vec<Slot> {
@@ -25,7 +42,6 @@ pub(crate) fn make(mut qenu_port: u16, vm_slots: i32) -> Vec<Slot> {
         let slot = Slot {
             slot_number,
             port: qenu_port,
-            used: Arc::new(Mutex::new(false)),
             child: Arc::new(Mutex::new(None::<Child>))
         };
         vec.push(slot);

@@ -11,26 +11,20 @@
 
 #[macro_use] extern crate rocket;
 
-use rocket::{
-    fs::{relative, FileServer}
-};
+use rocket::fs::FileServer;
 use crate::execute::{
     VirtualMachines, statistics, start_qemu, stop_qemu
 };
 use common::test_run;
-use log::info;
-mod env_logger;
 mod execute;
 mod config;
 mod common;
 
 #[launch]
 fn rocket() -> _ {
-    env_logger::env_logger();
-    info!("Starting App_Untitled. (version: {})", env!("CARGO_PKG_VERSION"));
+    println!("Starting App_Untitled. (version: {})", env!("CARGO_PKG_VERSION"));
     let config = config::config();
     let version_msg = test_run(config.1.clone());
-    info!("launching Rocket");
 
     // let config = Config {
     //     port: 7777,

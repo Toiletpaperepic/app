@@ -26,25 +26,30 @@ pub(crate) fn statistics(vms: &State<VirtualMachines>) -> Value {
 #[get("/stop?<slot_number>")]
 pub(crate) fn stop_qemu(slot_number: i32, vms: &State<VirtualMachines>) -> Value {
     for slot in &vms.virtual_machine_data {
-        if slot.slot_number == <i32 as TryInto<u16>>::try_into(slot_number).unwrap() {
-            let mut used = slot.used.lock().unwrap();
-            if *used {
-                *used = false;
-                slot.child.lock().unwrap().as_mut().unwrap().kill().unwrap();
-                return json!({"status": "ok"});
-            } else {
-                return json!({"status": "failed"});
+        let mut slot_child = slot.child.lock().unwrap();
+        if slot_child.is_some() {
+            if slot.slot_number == slot_number {
+                let mut used = slot.is_used().unwrap();
+                if used {
+                    //used = false;
+                    slot_child.as_mut().unwrap().kill().unwrap();
+                    return json!({"status": "ok"});
+                } else {
+                    return json!({"status": "failed"});
+                }
             }
         }
     }.into()
 }
 
+///Execute the virtual machine,
+///needs more optimizing
 #[get("/start")]
 pub(crate) fn start_qemu(vms: &State<VirtualMachines>) -> Value { 
     for slot in &vms.virtual_machine_data {
-        let mut used = slot.used.lock().unwrap();
-        if *used {
-            info!("slot {} not Available", slot.slot_number)
+        let mut used = slot.is_used().unwrap();
+        if used {
+            //continue;
         } else {
             info!("Slot {} available. starting", slot.slot_number);
 
@@ -52,7 +57,6 @@ pub(crate) fn start_qemu(vms: &State<VirtualMachines>) -> Value {
             let mut args = vms.qemu_args.clone();
             args.push("-vnc".to_owned());
             args.push(format!(":{},websocket", slot.port - 5700));
-            println!("{:?}", args);
             println!("\n{}", vms.version_msg);
 
             let vm = Command::new(vms.qemu_bin.clone())
@@ -61,7 +65,7 @@ pub(crate) fn start_qemu(vms: &State<VirtualMachines>) -> Value {
             .expect("command failed to start");
 
             *slot.child.lock().unwrap() = Some(vm);
-            *used = true;
+            used = true;
             
             return json!({
                 "status": "ok",

@@ -1,0 +1,1 @@
+-m 512 -cdrom "D:\iso\plpbt.iso" -device sb16

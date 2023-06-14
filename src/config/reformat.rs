@@ -13,9 +13,6 @@ pub(crate) fn split_argument(qemu_args: String) -> Vec<String>{
     let mut even = false;
 
     for v2 in v {
-        if v2.is_empty() {
-            break;
-        }
         if even {
             vec.push(v2.to_owned());
             even = false;
@@ -23,7 +20,11 @@ pub(crate) fn split_argument(qemu_args: String) -> Vec<String>{
         }
         else {
             for v3 in v2.split(' ') {
-                vec.push(v3.to_owned());
+                if v3.replace("\t", "").is_empty() {
+                    //
+                } else {
+                    vec.push(v3.to_owned());
+                }
             }
         }
         even = true;
