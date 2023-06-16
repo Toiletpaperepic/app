@@ -11,14 +11,17 @@
 
 #[macro_use] extern crate rocket;
 
-use rocket::fs::FileServer;
 use crate::execute::{
     VirtualMachines, statistics, start_qemu, stop_qemu
 };
+use crate::embed::frontend_embed;
+use crate::embed::novnc_embed;
+use crate::embed::index;
 use common::test_run;
 mod execute;
 mod config;
 mod common;
+mod embed;
 
 #[launch]
 fn rocket() -> _ {
@@ -41,6 +44,5 @@ fn rocket() -> _ {
             version_msg : version_msg.unwrap()
         })
         .mount("/api", routes![stop_qemu, start_qemu, statistics])
-        .mount("/", FileServer::from("lib/frontend/build"))
-        //.mount("/", FileServer::from("lib/noVNC"))
+        .mount("/", routes![index, novnc_embed, frontend_embed])
 }

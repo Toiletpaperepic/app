@@ -15,24 +15,6 @@ pub(crate) struct Slot {
     pub child: Arc<Mutex<Option<Child>>>
 }
 
-impl Slot {
-    pub fn is_used(&self) -> io::Result<bool> {
-        let mut child_lock = self.child.lock().unwrap();
-
-        if child_lock.is_none() {
-            return Ok(false);
-        }
-
-        return match child_lock.as_mut().unwrap().try_wait() {
-            Ok(Some(..)) => Ok(true),
-            Ok(None) => {
-                Ok(false)
-            }
-            Err(e) => Err(Error::new(ErrorKind::Other, format!("error attempting to wait: {e}").as_str())),
-        };
-    }
-}
-
 pub(crate) fn make(mut qenu_port: u16, vm_slots: i32) -> Vec<Slot> {
     let mut vec: Vec<Slot> = Vec::new();
     let stop = qenu_port + <i32 as TryInto<u16>>::try_into(vm_slots).unwrap();

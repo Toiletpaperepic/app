@@ -20,7 +20,11 @@ pub(crate) struct VirtualMachines {
 
 #[get("/statistics")]
 pub(crate) fn statistics(vms: &State<VirtualMachines>) -> Value {
-    unimplemented!() 
+    let mut slot_list:Vec<bool> = Vec::new();
+    for slot in &vms.virtual_machine_data {
+        slot_list.push(slot.child.lock().unwrap().is_some())
+    }
+    return json!({"slot": slot_list.len(), "slot_child": slot_list});
 }
 
 #[get("/stop?<slot_number>")]
@@ -29,10 +33,9 @@ pub(crate) fn stop_qemu(slot_number: i32, vms: &State<VirtualMachines>) -> Value
         let mut slot_child = slot.child.lock().unwrap();
         if slot_child.is_some() {
             if slot.slot_number == slot_number {
-                let mut used = slot.is_used().unwrap();
-                if used {
-                    //used = false;
+                if slot_child.is_some() {
                     slot_child.as_mut().unwrap().kill().unwrap();
+                    *slot_child = None;
                     return json!({"status": "ok"});
                 } else {
                     return json!({"status": "failed"});
@@ -47,8 +50,8 @@ pub(crate) fn stop_qemu(slot_number: i32, vms: &State<VirtualMachines>) -> Value
 #[get("/start")]
 pub(crate) fn start_qemu(vms: &State<VirtualMachines>) -> Value { 
     for slot in &vms.virtual_machine_data {
-        let mut used = slot.is_used().unwrap();
-        if used {
+        let mut slot_child = slot.child.lock().unwrap();
+        if slot_child.is_some() {
             //continue;
         } else {
             info!("Slot {} available. starting", slot.slot_number);
@@ -64,8 +67,7 @@ pub(crate) fn start_qemu(vms: &State<VirtualMachines>) -> Value {
             .spawn()
             .expect("command failed to start");
 
-            *slot.child.lock().unwrap() = Some(vm);
-            used = true;
+            *slot_child = Some(vm);
             
             return json!({
                 "status": "ok",
