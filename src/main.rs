@@ -41,5 +41,6 @@ fn rocket() -> _ {
             version_msg : version_msg.unwrap()
         })
         .mount("/api", routes![stop_qemu, start_qemu, statistics])
-        .mount("/", FileServer::from(config.2))
+        .mount("/", FileServer::from("lib/frontend/build"))
+        //.mount("/", FileServer::from("lib/noVNC"))
 }
