@@ -1,6 +1,3 @@
 [submodule "lib/noVNC"]
 	path = lib/noVNC
 	url = https://github.com/novnc/noVNC
-[submodule "lib/lib/noVNC"]
-	path = lib/lib/noVNC
-	url = https://github.com/novnc/noVNC
