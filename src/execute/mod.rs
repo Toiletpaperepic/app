@@ -24,7 +24,7 @@ pub(crate) fn statistics(vms: &State<VirtualMachines>) -> Value {
     for slot in &vms.virtual_machine_data {
         slot_list.push(slot.child.lock().unwrap().is_some())
     }
-    return json!({"slot": slot_list.len(), "slot_child": slot_list});
+    return json!({"slot": slot_list.len(), "slot_list": slot_list});
 }
 
 #[get("/stop?<slot_number>")]

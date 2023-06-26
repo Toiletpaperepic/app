@@ -1,0 +1,12 @@
+
+body {
+  display: block;
+  align-items: center;
+  height: 100vh;
+  margin: 0;
+  font-family: 'Open Sans', sans-serif;
+  background: linear-gradient(180deg,rgba(0, 0, 0, 0.47) -.79%,rgba(109, 5, 5, 0.757) 48.56%,#8e4706);
+}
+html, body, p {
+  text-align: center;
+}

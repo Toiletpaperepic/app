@@ -14,9 +14,8 @@
 use crate::execute::{
     VirtualMachines, statistics, start_qemu, stop_qemu
 };
-use crate::embed::frontend_embed;
 use crate::embed::novnc_embed;
-use crate::embed::index;
+use rocket::fs::FileServer;
 use common::test_run;
 mod execute;
 mod config;
@@ -44,5 +43,6 @@ fn rocket() -> _ {
             version_msg : version_msg.unwrap()
         })
         .mount("/api", routes![stop_qemu, start_qemu, statistics])
-        .mount("/", routes![index, novnc_embed, frontend_embed])
+        .mount("/", FileServer::from("lib/frontend"))
+        .mount("/", routes![novnc_embed])
 }
