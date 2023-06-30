@@ -1,7 +1,0 @@
-{
-    "qemu_bin": "C:/Program Files/msys64/ucrt64/bin/qemu-system-i386.exe",
-    "vnc_start_port": 5700,
-    "static_files": "static",
-    "server_port": 6080,
-    "vm_slots": 10
-}

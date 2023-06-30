@@ -1,3 +1,8 @@
 [submodule "lib/noVNC"]
 	path = lib/noVNC
 	url = https://github.com/novnc/noVNC
+[submodule "lib/Rocket"]
+	path = lib/Rocket
+	url = https://github.com/SergioBenitez/Rocket
+	branch = master
+
