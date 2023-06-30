@@ -1,4 +1,4 @@
 qemu_bin = 'C:/Program Files/msys64/ucrt64/bin/qemu-system-i386.exe'
 vnc_start_port = 5700
 static_files = 'static'
-vm_slots = 5000
+vm_slots = 50
