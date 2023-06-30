@@ -1,0 +1,16 @@
+.card {
+    border: 1.5px solid #06a320;
+    background-color: #00000075;
+    max-width: 420px;
+}
+.card-header {
+    background-color: #00000075;
+    color: #fff;
+    cursor: move;
+    padding: 5px;
+}
+#row {
+    display: flex;
+    flex-wrap: wrap;
+    padding: 10px;
+}

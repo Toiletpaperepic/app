@@ -18,18 +18,14 @@ pub(crate) struct Args {
     pub qemu_bin: String,
     pub vnc_start_port: u16,
     pub static_files: String,
-    pub server_port: u16,
     pub vm_slots: i32
 }
 
 pub(crate) fn config() -> (Vec<String>, String, String, Vec<Slot>) {
-    let config = fs::read_to_string("config/config.json").expect("Should have been able to read the file");
+    let config: Args = toml::from_str(fs::read_to_string("config/config.toml").expect("Should have been able to read the file").as_str()).unwrap();
 
-    // Parse the string of data into serde_json::Value.
-    let config_json: Args = serde_json::from_str(&config[..]).expect("Can't Parse config.json");
-
-    let virtual_machines = vm_slots::make(config_json.vnc_start_port, config_json.vm_slots);
+    let virtual_machines = vm_slots::make(config.vnc_start_port, config.vm_slots);
 
     let qemu_args = reformat::split_argument(fs::read_to_string("./config/qemu.args").expect("Should have been able to read the file"));
-    return (qemu_args, config_json.qemu_bin, config_json.static_files, virtual_machines);
+    return (qemu_args, config.qemu_bin, config.static_files, virtual_machines);
 }

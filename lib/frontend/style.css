@@ -1,11 +1,10 @@
-
 body {
   display: block;
   align-items: center;
-  height: 100vh;
+  /* height: 100vh; */
   margin: 0;
   font-family: 'Open Sans', sans-serif;
-  background: linear-gradient(180deg,rgba(0, 0, 0, 0.47) -.79%,rgba(109, 5, 5, 0.757) 48.56%,#8e4706);
+  background: linear-gradient(rgb(53, 91, 242) -.79%,rgba(255, 203, 0, 0.76) 48.56%,#000)
 }
 html, body, p {
   text-align: center;
