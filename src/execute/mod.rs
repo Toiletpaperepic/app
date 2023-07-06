@@ -7,18 +7,19 @@
 //
 //=================================================
 
-use std::process::Command;
-use crate::config::vm_slots::Slot;
-use rocket::{State, serde::json::{Value, json}};
+use std::{process::Command, path::PathBuf, usize, io::Error};
+use crate::config::vm_slots::{Slot, self};
+use rocket::{State, serde::json::{Value, json}, fairing::{Fairing, Info, Kind, self}, Build, Rocket};
 
+#[derive(Default)]
 pub(crate) struct VirtualMachines {
     pub qemu_args: Vec<String>,
-    pub qemu_bin: String,
+    pub qemu_bin: PathBuf,
     pub version_msg: String,
     pub virtual_machine_data: Vec<Slot>
 }
 
-#[get("/statistics")]
+#[get("/statistics", format = "application/json")]
 pub(crate) fn statistics(vms: &State<VirtualMachines>) -> Value {
     let mut slot_list:Vec<bool> = Vec::new();
     for slot in &vms.virtual_machine_data {
@@ -27,45 +28,38 @@ pub(crate) fn statistics(vms: &State<VirtualMachines>) -> Value {
     return json!({"slot": slot_list.len(), "slot_list": slot_list});
 }
 
-#[get("/stop?<slot_number>")]
-pub(crate) fn stop_qemu(slot_number: i32, vms: &State<VirtualMachines>) -> Value {
-    for slot in &vms.virtual_machine_data {
-        let mut slot_child = slot.child.lock().unwrap();
+#[get("/stop?<number>", format = "application/json")]
+pub(crate) fn stop_qemu(number: usize, vms: &State<VirtualMachines>) -> Value {
+    if vms.virtual_machine_data.len() > number {
+        let mut slot_child = vms.virtual_machine_data[number].child.lock().unwrap();
         if slot_child.is_some() {
-            if slot.slot_number == slot_number {
-                if slot_child.is_some() {
-                    slot_child.as_mut().unwrap().kill().unwrap();
-                    *slot_child = None;
-                    return json!({"status": "ok"});
-                } else {
-                    return json!({"status": "failed"});
-                }
-            }
+            slot_child.as_mut().unwrap().kill().unwrap();
+            *slot_child = None;
+            return json!({"status": "ok"});
+        } else {
+            return json!({"status": "Failed", "Reason": "It's not Running."});
         }
-    }.into()
+    } else {
+        return json!({"Status": "Failed", "Reason": "The Requested Slot Doesn't exist."});
+    }
 }
 
 ///Execute the virtual machine,
 ///needs more optimizing
-#[get("/start")]
-pub(crate) fn start_qemu(vms: &State<VirtualMachines>) -> Value { 
-    for slot in &vms.virtual_machine_data {
+#[get("/start?<number>", format = "application/json")]
+pub(crate) fn start_qemu(number: usize, vms: &State<VirtualMachines>) -> Value { 
+    if vms.virtual_machine_data.len() > number {
+        let slot = &vms.virtual_machine_data[number];
         let mut slot_child = slot.child.lock().unwrap();
-        if slot_child.is_some() {
-            //continue;
-        } else {
-            info!("Slot {} available. starting", slot.slot_number);
-
-            //clones and adds "-vnc :0,websocket" to the arguments
+        if slot_child.is_none() {
+            //adds "-vnc :0,websocket" to the arguments
             let mut args = vms.qemu_args.clone();
-            args.push("-vnc".to_owned());
+            args.push("-vnc".to_string());
             args.push(format!(":{},websocket", slot.port - 5700));
-            println!("\n{}", vms.version_msg);
 
             let vm = Command::new(vms.qemu_bin.clone())
             .args(args)
-            .spawn()
-            .expect("command failed to start");
+            .spawn().unwrap();
 
             *slot_child = Some(vm);
             
@@ -73,10 +67,12 @@ pub(crate) fn start_qemu(vms: &State<VirtualMachines>) -> Value {
                 "status": "ok",
                 "slot number": slot.slot_number,
                 "url": format!("/noVNC/vnc.html?path=&port={}", slot.port),
-                "stopurl": format!("/api/stop?slot_number={}", slot.slot_number)
+                "stopurl": format!("/api/stop?number={}", slot.slot_number)
             })
+        } else {
+            return json!({"status": "Failed", "Reason": "It's already running."});
         }
+    } else {
+        return json!({"Status": "Failed", "Reason": "The Requested Slot Doesn't exist."});
     }
-
-    json!({"status": "failed", "Reason": "No slots open."})
 }

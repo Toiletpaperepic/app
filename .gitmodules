@@ -5,4 +5,6 @@
 	path = lib/Rocket
 	url = https://github.com/SergioBenitez/Rocket
 	branch = master
-
+[submodule "lib/websockify"]
+	path = lib/websockify
+	url = https://github.com/novnc/websockify

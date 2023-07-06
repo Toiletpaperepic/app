@@ -19,11 +19,12 @@ checksum = "f26201604c87b1e01bd3d98f8d5d9a8fcbb815e8cedb41ffccbeb4bf593a35fe"
 
 [[package]]
 name = "app"
-version = "0.1.5"
+version = "0.1.6"
 dependencies = [
  "rocket",
  "rust-embed",
  "serde",
+ "shell-words",
  "toml",
 ]
 
@@ -936,6 +937,8 @@ dependencies = [
 [[package]]
 name = "rocket"
 version = "0.5.0-rc.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "58734f7401ae5cfd129685b48f61182331745b357b96f2367f01aebaf1cc9cc9"
 dependencies = [
  "async-stream",
  "async-trait",
@@ -973,6 +976,8 @@ dependencies = [
 [[package]]
 name = "rocket_codegen"
 version = "0.5.0-rc.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7093353f14228c744982e409259fb54878ba9563d08214f2d880d59ff2fc508b"
 dependencies = [
  "devise",
  "glob",
@@ -987,6 +992,8 @@ dependencies = [
 [[package]]
 name = "rocket_http"
 version = "0.5.0-rc.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "936012c99162a03a67f37f9836d5f938f662e26f2717809761a9ac46432090f4"
 dependencies = [
  "cookie",
  "either",
@@ -1068,14 +1075,14 @@ dependencies = [
 
 [[package]]
 name = "rustls"
-version = "0.21.2"
+version = "0.20.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e32ca28af694bc1bbf399c33a516dbdf1c90090b8ab23c2bc24f834aa2247f5f"
+checksum = "fff78fc74d175294f4e83b28343315ffcfb114b156f0185e9741cb5570f50e2f"
 dependencies = [
  "log",
  "ring",
- "rustls-webpki",
  "sct",
+ "webpki",
 ]
 
 [[package]]
@@ -1085,16 +1092,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d194b56d58803a43635bdc398cd17e383d6f71f9182b9a192c127ca42494a59b"
 dependencies = [
  "base64",
-]
-
-[[package]]
-name = "rustls-webpki"
-version = "0.100.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d6207cd5ed3d8dca7816f8f3725513a34609c0c765bf652b8c3cb4cfd87db46b"
-dependencies = [
- "ring",
- "untrusted",
 ]
 
 [[package]]
@@ -1201,6 +1198,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "shell-words"
+version = "1.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "24188a676b6ae68c3b2cb3a01be17fbf7240ce009799bb56d5b1409051e78fde"
+
+[[package]]
 name = "signal-hook-registry"
 version = "1.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1257,9 +1260,9 @@ dependencies = [
 
 [[package]]
 name = "state"
-version = "0.6.0"
+version = "0.5.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2b8c4a4445d81357df8b1a650d0d0d6fbbbfe99d064aa5e02f3e4022061476d8"
+checksum = "dbe866e1e51e8260c9eed836a042a5e7f6726bb2b411dffeaa712e19c388f23b"
 dependencies = [
  "loom",
 ]
@@ -1358,12 +1361,13 @@ dependencies = [
 
 [[package]]
 name = "tokio-rustls"
-version = "0.24.1"
+version = "0.23.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c28327cf380ac148141087fbfb9de9d7bd4e84ab5d2c28fbc911d753de8a7081"
+checksum = "c43ee83903113e03984cb9e5cebe6c04a5116269e900e3ddba8f068a62adda59"
 dependencies = [
  "rustls",
  "tokio",
+ "webpki",
 ]
 
 [[package]]
@@ -1641,6 +1645,16 @@ checksum = "9b85cbef8c220a6abc02aefd892dfc0fc23afb1c6a426316ec33253a3877249b"
 dependencies = [
  "js-sys",
  "wasm-bindgen",
+]
+
+[[package]]
+name = "webpki"
+version = "0.22.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f095d78192e208183081cc07bc5515ef55216397af48b873e5edcd72637fa1bd"
+dependencies = [
+ "ring",
+ "untrusted",
 ]
 
 [[package]]

@@ -18,7 +18,7 @@ pub(crate) struct Slot {
 pub(crate) fn make(mut qenu_port: u16, vm_slots: i32) -> Vec<Slot> {
     let mut vec: Vec<Slot> = Vec::new();
     let stop = qenu_port + <i32 as TryInto<u16>>::try_into(vm_slots).unwrap();
-    let mut slot_number = 1;
+    let mut slot_number = 0;
 
     loop {
         let slot = Slot {
