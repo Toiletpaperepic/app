@@ -1,35 +1,33 @@
-//=================================================
-//                 xxxxxxxxxxxxx
-//
-//               xxxxxxxxxxxxxxxxxxxx
-//
-//https://github.com/Toiletpaperepic/app
-//
-//=================================================
+/*
+=================================================
+                xxxxxxxxxxxxx
 
-use serde::{Serialize, Deserialize};
+              xxxxxxxxxxxxxxxxxxxx
+
+     https://github.com/Toiletpaperepic/app
+
+=================================================
+*/
+
 use crate::execute::VirtualMachines;
+use serde::{Serialize, Deserialize};
 use std::{fs, path::PathBuf};
-use crate::test_run;
-pub(crate) mod vm_slots;
+pub(crate) mod slots;
 
-#[derive(Serialize, Deserialize)]
-pub(crate) struct Args {
+#[derive(Serialize, Deserialize, Clone)]
+pub(crate) struct Config {
     pub qemu_bin: PathBuf,
     pub vnc_start_port: u16,
-    pub static_files: String,
-    pub vm_slots: i32
+    pub vm_slots: usize,
 }
 
-pub(crate) fn config() -> VirtualMachines {
-    let config: Args = toml::from_str(fs::read_to_string("config/config.toml").expect("Unable to read the file: is it there?").as_str()).unwrap();
-    let qemu_args = shell_words::split(fs::read_to_string("config/qemu.args").expect("Unable to read the file: is it there?").as_str()).unwrap();
-    let virtual_machines = vm_slots::make(config.vnc_start_port, config.vm_slots);
+pub(crate) fn config() -> VirtualMachines{
+    let config: Config = toml::from_str(
+        fs::read_to_string("config/config.toml")
+            .expect("Unable to read the file: is it there?")
+            .as_str(),
+    )
+    .unwrap();
 
-    return VirtualMachines {
-        qemu_args,
-        qemu_bin: config.qemu_bin.clone(),
-        version_msg: test_run(config.qemu_bin.clone()).unwrap(),
-        virtual_machine_data: virtual_machines,
-    };
+    return slots::config(config.clone());
 }
