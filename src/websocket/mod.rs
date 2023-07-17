@@ -2,31 +2,13 @@ use rocket::{tokio::{net::TcpStream, io::{AsyncReadExt, AsyncWriteExt}}, futures
 use ws::Message;
 use std::{net::SocketAddr, io};
 
-// #[get("/stream")]
-// pub(crate) async fn stream(ws: ws::WebSocket) -> io::Result<ws::Stream!['static]> {
-//     let addr = SocketAddr::from(([127, 0, 0, 1], 5900));
-//     let mut stream = TcpStream::connect(addr).await?;
-//     let mut buffer: Vec<u8> = vec![0; 10000];
-//     // Ok(ReaderStream::one(stream))
-
-//     ws::Stream! { ws =>
-//         for await message in ws {
-//             yield message?;
-//         }
-//     }
-// }
-
 #[get("/stream")]
 pub(crate) async fn stream(ws: ws::WebSocket) -> io::Result<ws::Channel<'static>> {
     let addr = SocketAddr::from(([127, 0, 0, 1], 5900));
     let mut stream = TcpStream::connect(addr).await?;
     let mut buffer: Vec<u8> = vec![0; 10000];
 
-    Ok(ws.channel(move |mut channel| Box::pin(async move {
-        // while let Some(message) = channel.next().await {
-        //     let _ = channel.send(message?).await;
-        //     let _ = channel.read(&mut buffer);
-        // }
+    Ok(ws.channel(move |mut channel| Box::pin(async move {loop {
         rocket::tokio::select! {
             message = channel.next() => {
                 if let Some(message) = message {
@@ -53,6 +35,5 @@ pub(crate) async fn stream(ws: ws::WebSocket) -> io::Result<ws::Channel<'static>
                 }
             }
         }
-        Ok(())
-    })))
+    }})))
 }

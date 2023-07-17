@@ -14,15 +14,15 @@
 use crate::execute::{
     VirtualMachines, statistics, start_qemu, stop_qemu
 };
-use crate::websocket::stream;
 use crate::embed::novnc_embed;
+use crate::websocket::stream;
 use rocket::fs::FileServer;
 use common::test_run;
-mod websocket;
 mod execute;
 mod config;
 mod common;
 mod embed;
+mod websocket;
 
 #[launch]
 fn rocket() -> _ {

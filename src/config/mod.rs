@@ -22,7 +22,7 @@ pub(crate) struct Args {
 }
 
 pub(crate) fn config() -> (Vec<String>, String, String, Vec<Slot>) {
-    let config: Args = toml::from_str(fs::read_to_string("config/config.toml").expect("Should have been able to read the file").as_str()).unwrap();
+    let config: Args = toml::from_str(fs::read_to_string("config/config.toml").expect("Should have been able to read the file").as_str()).expect("Should have been able to read the file");
 
     let virtual_machines = vm_slots::make(config.vnc_start_port, config.vm_slots);
 
