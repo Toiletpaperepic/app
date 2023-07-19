@@ -1,14 +1,3 @@
-/*
-=================================================
-                xxxxxxxxxxxxx
-
-              xxxxxxxxxxxxxxxxxxxx
-
-     https://github.com/Toiletpaperepic/app
-
-=================================================
-*/
-
 use crate::execute::VirtualMachines;
 use serde::{Serialize, Deserialize};
 use std::{fs, path::PathBuf};

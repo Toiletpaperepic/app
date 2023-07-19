@@ -1,14 +1,3 @@
-/*
-=================================================
-                xxxxxxxxxxxxx
-
-              xxxxxxxxxxxxxxxxxxxx
-
-     https://github.com/Toiletpaperepic/app
-
-=================================================
-*/
-
 use rocket::{http::ContentType, response::content::RawHtml};
 use std::{ffi::OsStr, path::PathBuf, borrow::Cow};
 use rust_embed::RustEmbed;
@@ -18,7 +7,7 @@ use rust_embed::RustEmbed;
 struct NoVnc;
 
 #[derive(RustEmbed)]
-#[folder = "lib\frontend"]
+#[folder = "lib/frontend"]
 struct Frontend;
 
 #[get("/")]

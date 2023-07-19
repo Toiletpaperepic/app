@@ -15,11 +15,10 @@
 extern crate rocket;
 
 use crate::execute::{
-    VirtualMachines, statistics, start_qemu, stop_qemu
+    statistics, start_qemu, stop_qemu
 };
-use crate::embed::novnc_embed;
+use crate::embed::{index, novnc_embed, frontend_embed};
 use crate::websocket::stream;
-use rocket::fs::FileServer;
 use common::test_run;
 mod execute;
 mod common;

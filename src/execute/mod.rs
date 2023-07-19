@@ -1,14 +1,3 @@
-/*
-=================================================
-                xxxxxxxxxxxxx
-
-              xxxxxxxxxxxxxxxxxxxx
-
-     https://github.com/Toiletpaperepic/app
-
-=================================================
-*/
-
 use std::{path::PathBuf, process::Command, usize};
 use crate::config::slots::vmid::Vmid;
 use serde::Serialize;

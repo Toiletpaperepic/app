@@ -1,14 +1,3 @@
-/*
-=================================================
-                xxxxxxxxxxxxx
-
-              xxxxxxxxxxxxxxxxxxxx
-
-     https://github.com/Toiletpaperepic/app
-
-=================================================
-*/
-
 use std::{
     io::{self, Error, ErrorKind},
     path::PathBuf,

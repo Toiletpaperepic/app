@@ -1,14 +1,3 @@
-/*
-=================================================
-                xxxxxxxxxxxxx
-
-              xxxxxxxxxxxxxxxxxxxx
-
-     https://github.com/Toiletpaperepic/app
-
-=================================================
-*/
-
 use std::{
     process::Child,
     sync::{Arc, Mutex},
