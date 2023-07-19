@@ -6,11 +6,13 @@
 .card-header {
     background-color: #00000075;
     color: #fff;
-    cursor: move;
     padding: 5px;
 }
 #row {
     display: flex;
     flex-wrap: wrap;
     padding: 10px;
+}
+.padding {
+    padding: 12px;
 }

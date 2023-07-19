@@ -2,7 +2,7 @@ use crate::config::Config;
 use crate::execute::VirtualMachines;
 use crate::test_run;
 use std::fs;
-pub(crate) mod vm_slots;
+pub(crate) mod vmid;
 
 pub(crate) fn config(config: Config) -> VirtualMachines {
     let qemu_args = shell_words::split(
@@ -11,7 +11,7 @@ pub(crate) fn config(config: Config) -> VirtualMachines {
             .as_str(),
     )
     .unwrap();
-    let virtual_machines = vm_slots::make(config.vnc_start_port, config.vm_slots);
+    let virtual_machines = vmid::make(config.vnc_start_port, config.vm_slots);
     let qemu_bin = config.qemu_bin.clone();
     let version_msg = test_run(config.qemu_bin.clone()).unwrap();
 

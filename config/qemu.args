@@ -1,1 +1,1 @@
--m 512 -cdrom "D:\iso\haiku-r1beta4-x86_gcc2h-anyboot.iso" -device sb16
+-m 512 -cdrom "d:\iso\hannah_montana_linux_x86_basic_edition.iso" -device sb16

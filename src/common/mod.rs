@@ -16,19 +16,18 @@ use std::{
 };
 
 pub(crate) fn test_run(qemu: PathBuf) -> Result<String, io::Error> {
+    println!("looking for qemu....");
     let child = Command::new(qemu)
         .arg("-version")
         .stdout(Stdio::piped())
-        .output();
+        .output()
+        .map_err(|err|Error::new(ErrorKind::InvalidData,format!("Invalid QEMU Binary: {}", err.to_string())));
 
     if child.is_err() {
-        return Err(Error::new(
-            ErrorKind::NotFound,
-            format!("Invalid QEMU Binary: {}", child.unwrap_err()),
-        ));
+        return Err(child.unwrap_err());
     } else {
         let version_msg = String::from_utf8_lossy(&child.expect("Command Failed").stdout).to_string();
-        info!("Found {}", version_msg.clone().as_str().replace("\n", " ").replace("\r", " "));
+        println!("Found {}", version_msg.clone().as_str().replace("\n", " ").replace("\r", " "));
         return Ok(version_msg);
     }
 }

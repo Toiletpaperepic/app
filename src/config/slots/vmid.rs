@@ -14,27 +14,29 @@ use std::{
     sync::{Arc, Mutex},
 };
 
-pub(crate) struct Slot {
-    pub slot_number: i32,
+pub(crate) struct Vmid {
+    pub vmid_number: i32,
     pub port: u16,
     pub child: Arc<Mutex<Option<Child>>>,
 }
 
-pub(crate) fn make(qenu_port: u16, vm_slots: usize) -> Vec<Slot> {
-    let mut vec: Vec<Slot> = Vec::new();
+pub(crate) fn make(mut qenu_port: u16, vm_slots: usize) -> Vec<Vmid> {
+    let mut vec: Vec<Vmid> = Vec::new();
     let mut qenu_port_usize = <u16 as TryInto<usize>>::try_into(qenu_port).unwrap();
-    let stop = qenu_port_usize + vm_slots;
-    let mut slot_number = 0;
+    let stop = qenu_port_usize + vm_slots + 1;
+    let mut vmid_number = 0;
 
     loop {
-        let slot = Slot {
-            slot_number,
+        let vmid = Vmid {
+            vmid_number,
             port: qenu_port,
             child: Arc::new(Mutex::new(None::<Child>)),
         };
-        vec.push(slot);
+        println!("in, vmid: {} port{}", vmid.vmid_number, vmid.port);
+        vec.push(vmid);
+        qenu_port += 1;
         qenu_port_usize += 1;
-        slot_number += 1;
+        vmid_number += 1;
 
         if stop == qenu_port_usize {
             break;

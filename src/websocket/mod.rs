@@ -1,12 +1,13 @@
-use rocket::{tokio::{net::TcpStream, io::{AsyncReadExt, AsyncWriteExt}}, futures::{StreamExt, SinkExt}};
+use rocket::{tokio::{net::TcpStream, io::{AsyncReadExt, AsyncWriteExt}}, futures::{StreamExt, SinkExt}, State};
+use crate::execute::VirtualMachines;
+use std::{net::SocketAddr, io::{self, ErrorKind, Error}};
 use ws::Message;
-use std::{net::SocketAddr, io};
 
-#[get("/stream")]
-pub(crate) async fn stream(ws: ws::WebSocket) -> io::Result<ws::Channel<'static>> {
-    let addr = SocketAddr::from(([127, 0, 0, 1], 5900));
-    let mut stream = TcpStream::connect(addr).await?;
+#[get("/stream/<streamfrom>")]
+pub(crate) async fn stream(ws: ws::WebSocket, streamfrom: usize, vms: &State<VirtualMachines>) -> io::Result<ws::Channel<'static>> {
     let mut buffer: Vec<u8> = vec![0; 10000];
+    let addr = connect(streamfrom, vms)?;
+    let mut stream = TcpStream::connect(addr).await?;
 
     Ok(ws.channel(move |mut channel| Box::pin(async move {loop {
         rocket::tokio::select! {
@@ -36,4 +37,21 @@ pub(crate) async fn stream(ws: ws::WebSocket) -> io::Result<ws::Channel<'static>
             }
         }
     }})))
+}
+
+fn connect(streamfrom: usize, vms: &VirtualMachines) -> io::Result<SocketAddr>{
+    if vms.virtual_machines.len() > streamfrom {
+        let vmid = &vms.virtual_machines[streamfrom];
+        let vmid_lock = vmid.child.lock().map_err(|err|Error::new(ErrorKind::Other,format!("child lock failed: {}", err.to_string())))?; 
+        if vmid_lock.is_some() {
+            let addr = SocketAddr::from(([127, 0, 0, 1], vmid.port));
+            println!("addr = {}", addr);
+            
+            return Ok(addr);
+        } else {
+            return Err(Error::new(ErrorKind::NotFound,"It's not Running."));
+        }
+    } else {
+        return Err(Error::new(ErrorKind::NotFound,"The Requested VM Doesn't exist."));
+    }
 }

@@ -35,6 +35,5 @@ fn rocket() -> _ {
     rocket::build()
         .manage(config)
         .mount("/api", routes![stream ,stop_qemu, start_qemu, statistics])
-        .mount("/", FileServer::from("lib/frontend"))
-        .mount("/", routes![novnc_embed])
+        .mount("/", routes![index, novnc_embed, frontend_embed])
 }
