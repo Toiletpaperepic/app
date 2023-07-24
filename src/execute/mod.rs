@@ -5,42 +5,33 @@ use rocket::{
     serde::json::{
         json, Value
     },
-    State, 
-    http::uri::Origin,
+    State
 };
 
 
 pub(crate) struct VirtualMachines {
     pub qemu_args: Vec<String>,
     pub qemu_bin: PathBuf,
-    pub version_msg: String,
     pub virtual_machines: Vec<Vmid>,
+    pub stream_buffer: usize
 }
 
 #[derive(Serialize)]
 struct VmList {
     runing: bool,
-    vmid: usize,
-    url: String,
-    stop: String,
-    start: String
+    vmid: i32
 }
 
 #[get("/statistics", format = "application/json")]
 pub(crate) fn statistics(vms: &State<VirtualMachines>) -> Value {
-    let mut count: usize = 0;
     let mut vm_list: Vec<VmList> = Vec::new();
     for vmid in &vms.virtual_machines {
         vm_list.push(VmList {
             runing: vmid.child.lock().unwrap().is_some(),
-            url: format!("/noVNC/vnc.html?path=api/stream/{}",vmid.vmid_number),
-            stop: format!("/api/stop?number={}",vmid.vmid_number),
-            start: format!("/api/start?number={}",vmid.vmid_number),
-            vmid: count
+            vmid: vmid.vmid_number
         });
-        count += 1
     }
-    return json!({"slot": vm_list.len(), "vm_list": vm_list});
+    return json!({"vm_list": vm_list});
 }
 
 #[get("/stop?<number>", format = "application/json")]
@@ -80,9 +71,7 @@ pub(crate) fn start_qemu(number: usize, vms: &State<VirtualMachines>) -> Value {
 
             return json!({
                 "status": "ok",
-                "slot number": vmid.vmid_number,
-                "url": format!("/noVNC/vnc.html?path=api/stream/{}", vmid.vmid_number),
-                "stopurl": format!("/api/stop?number={}", vmid.vmid_number)
+                "vmid": vmid.vmid_number
             });
         } else {
             return json!({"status": "Failed", "Reason": "It's already running."});

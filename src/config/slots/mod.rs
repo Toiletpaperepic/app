@@ -6,19 +6,18 @@ pub(crate) mod vmid;
 
 pub(crate) fn config(config: Config) -> VirtualMachines {
     let qemu_args = shell_words::split(
-        fs::read_to_string("config/qemu.args")
+        fs::read_to_string(config.qemu_args)
             .expect("Unable to read the file: is it there?")
             .as_str(),
     )
     .unwrap();
     let virtual_machines = vmid::make(config.vnc_start_port, config.vm_slots);
-    let qemu_bin = config.qemu_bin.clone();
-    let version_msg = test_run(config.qemu_bin.clone()).unwrap();
+    test_run(config.qemu_bin.clone());
 
     return VirtualMachines {
         qemu_args,
-        qemu_bin,
-        version_msg,
+        qemu_bin: config.qemu_bin,
         virtual_machines,
+        stream_buffer: config.stream_buffer
     };
 }

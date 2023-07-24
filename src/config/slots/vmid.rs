@@ -21,7 +21,7 @@ pub(crate) fn make(mut qenu_port: u16, vm_slots: usize) -> Vec<Vmid> {
             port: qenu_port,
             child: Arc::new(Mutex::new(None::<Child>)),
         };
-        println!("in, vmid: {} port{}", vmid.vmid_number, vmid.port);
+        println!("adding.... vmid: {}, port{}", vmid.vmid_number, vmid.port);
         vec.push(vmid);
         qenu_port += 1;
         qenu_port_usize += 1;
