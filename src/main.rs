@@ -11,23 +11,23 @@
 
 ///todo: name it
 
-#[macro_use]
-extern crate rocket;
-
-use std::path::PathBuf;
+#[macro_use] extern crate rocket;
 
 use crate::execute::{
     statistics, start_qemu, stop_qemu
 };
 use crate::embed::{index, novnc_embed, frontend_embed};
 use crate::websocket::stream;
-use common::test_run;
+use rocket::fairing::AdHoc;
+use std::path::PathBuf;
 use clap::Parser;
 mod websocket;
 mod execute;
 mod common;
 mod config;
 mod embed;
+mod setup;
+mod about;
 
 #[derive(Parser, Debug)]
 #[command(author, about, long_about = None)]
@@ -40,7 +40,7 @@ pub(crate) struct Args {
     #[arg(short, long)]
     config: Option<PathBuf>,
     
-    ///print version
+    ///Print version
     #[arg(short, long)]
     version: bool
 }
@@ -48,11 +48,17 @@ pub(crate) struct Args {
 #[launch]
 fn rocket() -> _ {
     let args = Args::parse();
-    println!("Starting App_Untitled. (version: {})", env!("CARGO_PKG_VERSION"));
-    let config = config::config(args);
-
+    if args.version {
+        about::about()
+    }
+    
     rocket::build()
-        .manage(config)
+        .attach(AdHoc::on_ignite("startup", |rocket| Box::pin(async {
+            info!("Starting App_Untitled. (version: {})", env!("CARGO_PKG_VERSION"));
+            let config = config::config(args);
+
+            rocket.manage(config)
+        })))
         .mount("/api", routes![stream ,stop_qemu, start_qemu, statistics])
         .mount("/", routes![index, novnc_embed, frontend_embed])
 }

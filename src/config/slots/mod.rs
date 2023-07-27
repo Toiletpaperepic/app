@@ -1,6 +1,5 @@
 use crate::config::Config;
 use crate::execute::VirtualMachines;
-use crate::test_run;
 use std::fs;
 pub(crate) mod vmid;
 
@@ -12,7 +11,6 @@ pub(crate) fn config(config: Config) -> VirtualMachines {
     )
     .unwrap();
     let virtual_machines = vmid::make(config.vnc_start_port, config.vm_slots);
-    test_run(config.qemu_bin.clone());
 
     return VirtualMachines {
         qemu_args,

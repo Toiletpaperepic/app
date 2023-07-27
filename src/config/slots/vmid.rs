@@ -3,6 +3,7 @@ use std::{
     sync::{Arc, Mutex},
 };
 
+#[derive(Clone, Debug)]
 pub(crate) struct Vmid {
     pub vmid_number: i32,
     pub port: u16,
@@ -21,7 +22,7 @@ pub(crate) fn make(mut qenu_port: u16, vm_slots: usize) -> Vec<Vmid> {
             port: qenu_port,
             child: Arc::new(Mutex::new(None::<Child>)),
         };
-        println!("adding.... vmid: {}, port{}", vmid.vmid_number, vmid.port);
+        info!("preloading.... {:#?}", vmid);
         vec.push(vmid);
         qenu_port += 1;
         qenu_port_usize += 1;
@@ -32,4 +33,17 @@ pub(crate) fn make(mut qenu_port: u16, vm_slots: usize) -> Vec<Vmid> {
         }
     }
     return vec;
+}
+
+#[test]
+fn test() {
+    let vmid = make(5900,4);
+
+    //test 0
+    assert_eq!(vmid[0].port, 5900);
+    assert_eq!(vmid[0].vmid_number, 0);
+
+    //test 4
+    assert_eq!(vmid[4].port, 5904);
+    assert_eq!(vmid[4].vmid_number, 4);
 }

@@ -1,4 +1,4 @@
-use crate::{execute::VirtualMachines, Args};
+use crate::{execute::VirtualMachines, Args, setup, common::test_run};
 use serde::{Serialize, Deserialize};
 use std::{fs, path::PathBuf};
 pub(crate) mod slots;
@@ -13,14 +13,14 @@ pub(crate) struct Config {
 }
 
 pub(crate) fn config(mut args: Args) -> VirtualMachines {
-    println!("Found {:?}", args);
+    info!("Found {:#?}", args);
 
     if args.setup {
-        println!("=================================\nSetup is true! Moving to setup...\n=================================");
-        unimplemented!()
+        info!("=================================\nSetup is true! Moving to setup...\n=================================");
+        setup::gotosetup();
     }
-    
-    println!("loading config...");
+
+    info!("loading config...");
     let config: Config = toml::from_str(
         fs::read_to_string(args.config.get_or_insert(PathBuf::from("config/config.toml")))
             .expect("Unable to read the file: is it there? Maybe try --setup.")
@@ -28,7 +28,9 @@ pub(crate) fn config(mut args: Args) -> VirtualMachines {
     )
     .unwrap();
 
-    println!("Found {:?}", config);
+    info!("Found {:#?}", config);
+
+    test_run(config.qemu_bin.clone());
 
     return slots::config(config);
 }

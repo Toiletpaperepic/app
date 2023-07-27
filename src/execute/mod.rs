@@ -8,7 +8,6 @@ use rocket::{
     State
 };
 
-
 pub(crate) struct VirtualMachines {
     pub qemu_args: Vec<String>,
     pub qemu_bin: PathBuf,

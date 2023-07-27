@@ -4,7 +4,7 @@ use std::{
 };
 
 pub(crate) fn test_run(qemu: PathBuf) {
-    println!("looking for qemu....");
+    info!("looking for qemu....");
     let child = Command::new(qemu)
         .arg("-version")
         .stdout(Stdio::piped())
@@ -14,6 +14,6 @@ pub(crate) fn test_run(qemu: PathBuf) {
         panic!("Invalid QEMU Binary: {}", child.unwrap_err());
     } else {
         let version_msg = String::from_utf8_lossy(&child.expect("Command Failed").stdout).to_string();
-        println!("Found {}", version_msg.clone().as_str().replace("\n", " ").replace("\r", " "));
+        info!("Found {}", version_msg.clone().as_str().replace("\n", " ").replace("\r", " "));
     }
 }

@@ -1,12 +1,12 @@
 use rocket::{tokio::{net::TcpStream, io::{AsyncReadExt, AsyncWriteExt}}, futures::{StreamExt, SinkExt}, State};
-use crate::execute::VirtualMachines;
+use crate::{execute::VirtualMachines, config::slots::vmid::Vmid};
 use std::{net::SocketAddr, io::{self, ErrorKind, Error}};
 use ws::Message;
 
 #[get("/stream/<streamfrom>")]
 pub(crate) async fn stream(ws: ws::WebSocket, streamfrom: usize, vms: &State<VirtualMachines>) -> io::Result<ws::Channel<'static>> {
     let mut buffer: Vec<u8> = vec![0; vms.stream_buffer];
-    let addr = getaddr(streamfrom, vms)?;
+    let addr = getaddr(streamfrom, vms.virtual_machines.clone())?;
     let mut stream = TcpStream::connect(addr).await?;
 
     Ok(ws.channel(move |mut channel| Box::pin(async move {loop {
@@ -39,14 +39,30 @@ pub(crate) async fn stream(ws: ws::WebSocket, streamfrom: usize, vms: &State<Vir
     }})))
 }
 
-fn getaddr(streamfrom: usize, vms: &VirtualMachines) -> io::Result<SocketAddr>{
-    if vms.virtual_machines.len() > streamfrom {
-        let vmid = &vms.virtual_machines[streamfrom];
+fn getaddr(streamfrom: usize, virtual_machines: Vec<Vmid>) -> io::Result<SocketAddr>{
+    if virtual_machines.len() > streamfrom {
+        let vmid = &virtual_machines[streamfrom];
         let addr = SocketAddr::from(([127, 0, 0, 1], vmid.port));
-        println!("addr = {}", addr);
+        info!("addr = {}", addr);
             
         return Ok(addr);
     } else {
         return Err(Error::new(ErrorKind::NotFound,"The Requested VM Doesn't exist."));
     }
+}
+
+#[test]
+fn test() {
+    use crate::config::slots::vmid::make;
+    let vmid = make(5900,4);
+
+    //test 0
+    assert_eq!(getaddr(0, vmid.clone()).unwrap(), SocketAddr::from(([127, 0, 0, 1], 5900)));
+
+    //test 4
+    assert_eq!(getaddr(4, vmid.clone()).unwrap(), SocketAddr::from(([127, 0, 0, 1], 5904)));
+
+    //
+    assert_eq!(getaddr(10, vmid.clone()).unwrap_err().to_string(), "The Requested VM Doesn't exist.".to_string());
+    drop(vmid)
 }
