@@ -1,0 +1,27 @@
+[
+  {
+    "vmid_number": 0,
+    "port": 5900,
+    "qemu_arg": []
+  },
+  {
+    "vmid_number": 1,
+    "port": 5901,
+    "qemu_arg": []
+  },
+  {
+    "vmid_number": 2,
+    "port": 5902,
+    "qemu_arg": []
+  },
+  {
+    "vmid_number": 3,
+    "port": 5903,
+    "qemu_arg": []
+  },
+  {
+    "vmid_number": 4,
+    "port": 5904,
+    "qemu_arg": []
+  }
+]

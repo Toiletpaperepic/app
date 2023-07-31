@@ -22,12 +22,12 @@ use rocket::fairing::AdHoc;
 use std::path::PathBuf;
 use clap::Parser;
 mod websocket;
+mod version;
 mod execute;
 mod common;
 mod config;
 mod embed;
 mod setup;
-mod about;
 
 #[derive(Parser, Debug)]
 #[command(author, about, long_about = None)]
@@ -49,9 +49,12 @@ pub(crate) struct Args {
 fn rocket() -> _ {
     let args = Args::parse();
     if args.version {
-        about::about()
+        version::version()
+    } else if args.setup {
+        println!("Moving to setup...");
+        setup::gotosetup().unwrap();
     }
-    
+
     rocket::build()
         .attach(AdHoc::on_ignite("startup", |rocket| Box::pin(async {
             info!("Starting App_Untitled. (version: {})", env!("CARGO_PKG_VERSION"));

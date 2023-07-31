@@ -1,11 +1,11 @@
 use rocket::{tokio::{net::TcpStream, io::{AsyncReadExt, AsyncWriteExt}}, futures::{StreamExt, SinkExt}, State};
-use crate::{execute::VirtualMachines, config::slots::vmid::Vmid};
-use std::{net::SocketAddr, io::{self, ErrorKind, Error}};
+use std::{net::SocketAddr, io::{self, ErrorKind, Error}, sync::{Mutex, Arc}};
+use crate::{execute::VirtualMachines, config::vmids::preload::Vmid};
 use ws::Message;
 
 #[get("/stream/<streamfrom>")]
 pub(crate) async fn stream(ws: ws::WebSocket, streamfrom: usize, vms: &State<VirtualMachines>) -> io::Result<ws::Channel<'static>> {
-    let mut buffer: Vec<u8> = vec![0; vms.stream_buffer];
+    let mut buffer: Vec<u8> = vec![0; vms.config.stream_buffer];
     let addr = getaddr(streamfrom, vms.virtual_machines.clone())?;
     let mut stream = TcpStream::connect(addr).await?;
 
@@ -39,10 +39,10 @@ pub(crate) async fn stream(ws: ws::WebSocket, streamfrom: usize, vms: &State<Vir
     }})))
 }
 
-fn getaddr(streamfrom: usize, virtual_machines: Vec<Vmid>) -> io::Result<SocketAddr>{
+fn getaddr(streamfrom: usize, virtual_machines: Vec<Arc<Mutex<Vmid>>>) -> io::Result<SocketAddr>{
     if virtual_machines.len() > streamfrom {
         let vmid = &virtual_machines[streamfrom];
-        let addr = SocketAddr::from(([127, 0, 0, 1], vmid.port));
+        let addr = SocketAddr::from(([127, 0, 0, 1], vmid.lock().unwrap().port));
         info!("addr = {}", addr);
             
         return Ok(addr);
@@ -53,16 +53,15 @@ fn getaddr(streamfrom: usize, virtual_machines: Vec<Vmid>) -> io::Result<SocketA
 
 #[test]
 fn test() {
-    use crate::config::slots::vmid::make;
-    let vmid = make(5900,4);
+    use crate::config::vmids::{preload, addmutex};
+    let vmid = addmutex::run(preload::run(5900,4));
 
     //test 0
     assert_eq!(getaddr(0, vmid.clone()).unwrap(), SocketAddr::from(([127, 0, 0, 1], 5900)));
 
     //test 4
-    assert_eq!(getaddr(4, vmid.clone()).unwrap(), SocketAddr::from(([127, 0, 0, 1], 5904)));
+    assert_eq!(getaddr(3, vmid.clone()).unwrap(), SocketAddr::from(([127, 0, 0, 1], 5903)));
 
-    //
     assert_eq!(getaddr(10, vmid.clone()).unwrap_err().to_string(), "The Requested VM Doesn't exist.".to_string());
     drop(vmid)
 }

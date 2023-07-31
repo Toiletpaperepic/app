@@ -1,6 +1,3 @@
 /target
-config/token.list
-config/config.toml
-*.args
-*.list
 *.pem
+Cargo.lock

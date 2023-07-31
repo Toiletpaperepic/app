@@ -1,6 +1,6 @@
 [package]
 name = "app"
-version = "0.2.0"
+version = "0.2.1"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -10,7 +10,7 @@ rocket = { path = "./lib/Rocket/core/lib", features = ["json","tls"] }
 ws = { package = "rocket_ws", path = "./lib/Rocket/contrib/ws" }
 serde = { version = "1.0.171", features = ["derive"] }
 clap = { version = "4.3.17", features = ["derive"] }
+serde_json = "1.0.104"
 shell-words = "1.1.0"
 rust-embed = "6.8.1"
-which = "4.4.0"
 toml = "0.7.6"

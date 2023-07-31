@@ -1,5 +1,5 @@
-use std::{path::PathBuf, process::Command, usize};
-use crate::config::slots::vmid::Vmid;
+use std::{process::Command, usize, sync::{Arc, Mutex}};
+use crate::config::{vmids::preload::Vmid, Config};
 use serde::Serialize;
 use rocket::{
     serde::json::{
@@ -9,10 +9,8 @@ use rocket::{
 };
 
 pub(crate) struct VirtualMachines {
-    pub qemu_args: Vec<String>,
-    pub qemu_bin: PathBuf,
-    pub virtual_machines: Vec<Vmid>,
-    pub stream_buffer: usize
+    pub virtual_machines: Vec<Arc<Mutex<Vmid>>>,
+    pub config: Config
 }
 
 #[derive(Serialize)]
@@ -25,9 +23,10 @@ struct VmList {
 pub(crate) fn statistics(vms: &State<VirtualMachines>) -> Value {
     let mut vm_list: Vec<VmList> = Vec::new();
     for vmid in &vms.virtual_machines {
+        let vmid_lock = vmid.lock().unwrap();
         vm_list.push(VmList {
-            runing: vmid.child.lock().unwrap().is_some(),
-            vmid: vmid.vmid_number
+            runing: vmid_lock.child.is_some(),
+            vmid: vmid_lock.vmid_number
         });
     }
     return json!({"vm_list": vm_list});
@@ -36,10 +35,10 @@ pub(crate) fn statistics(vms: &State<VirtualMachines>) -> Value {
 #[get("/stop?<number>", format = "application/json")]
 pub(crate) fn stop_qemu(number: usize, vms: &State<VirtualMachines>) -> Value {
     if vms.virtual_machines.len() > number {
-        let mut vm_child = vms.virtual_machines[number].child.lock().unwrap();
-        if vm_child.is_some() {
-            vm_child.as_mut().unwrap().kill().unwrap();
-            *vm_child = None;
+        let vmid_lock = &mut vms.virtual_machines[number].lock().unwrap();
+        if vmid_lock.child.is_some() {
+            vmid_lock.child.as_mut().unwrap().kill().unwrap();
+            vmid_lock.child = None.into();
             return json!({"status": "ok"});
         } else {
             return json!({"status": "Failed", "Reason": "It's not Running."});
@@ -53,24 +52,24 @@ pub(crate) fn stop_qemu(number: usize, vms: &State<VirtualMachines>) -> Value {
 #[get("/start?<number>", format = "application/json")]
 pub(crate) fn start_qemu(number: usize, vms: &State<VirtualMachines>) -> Value {
     if vms.virtual_machines.len() > number {
-        let vmid = &vms.virtual_machines[number];
-        let mut vm_child = vmid.child.lock().unwrap();
-        if vm_child.is_none() {
+        let vmid_lock = &mut vms.virtual_machines[number].lock().unwrap();
+        if vmid_lock.child.is_none() {
             //adds "-vnc :0,websocket" to the arguments
-            let mut args = vms.qemu_args.clone();
+            let mut args = vmid_lock.qemu_arg.clone();
             args.push("-vnc".to_string());
-            args.push(format!(":{}", vmid.port - 5900));
+            args.push(format!(":{}", vmid_lock.port - 5900));
+            info!("{:#?}", args);
 
-            let vm = Command::new(vms.qemu_bin.clone())
-                .args(args)
+            let vm = Command::new(vms.config.qemu_bin.clone())
+                .args(&args)
                 .spawn()
                 .expect("command failed to start");
 
-            *vm_child = Some(vm);
+            vmid_lock.child = Some(vm);
 
             return json!({
                 "status": "ok",
-                "vmid": vmid.vmid_number
+                "vmid": vmid_lock.vmid_number
             });
         } else {
             return json!({"status": "Failed", "Reason": "It's already running."});
