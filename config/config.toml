@@ -1,3 +1,0 @@
-qemu_bin = 'qemu-system-i386'
-qemu_args = 'config\vmids.json'
-stream_buffer = 10000

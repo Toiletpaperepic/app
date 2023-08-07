@@ -1,10 +1,10 @@
 use rocket::{tokio::{net::TcpStream, io::{AsyncReadExt, AsyncWriteExt}}, futures::{StreamExt, SinkExt}, State};
 use std::{net::SocketAddr, io::{self, ErrorKind, Error}, sync::{Mutex, Arc}};
-use crate::{execute::VirtualMachines, config::vmids::preload::Vmid};
+use crate::{execute::VirtualMachines, config::vmids::Vmid};
 use ws::Message;
 
 #[get("/stream/<streamfrom>")]
-pub(crate) async fn stream(ws: ws::WebSocket, streamfrom: usize, vms: &State<VirtualMachines>) -> io::Result<ws::Channel<'static>> {
+pub(crate) async fn stream(ws: ws::WebSocket, streamfrom: usize, vms: &State<VirtualMachines>) -> Result<ws::Channel<'static>, Error> {
     let mut buffer: Vec<u8> = vec![0; vms.config.stream_buffer];
     let addr = getaddr(streamfrom, vms.virtual_machines.clone())?;
     let mut stream = TcpStream::connect(addr).await?;
@@ -17,10 +17,6 @@ pub(crate) async fn stream(ws: ws::WebSocket, streamfrom: usize, vms: &State<Vir
                     if message.is_binary() {
                         stream.write(&Message::binary(message).into_data()).await?;
                     }
-                    else if message.is_close() {
-                        channel.close(None).await?; 
-                        return Ok(());
-                    }
                 } else {
                     error!("No packet received from websocket");
                 }
@@ -31,7 +27,7 @@ pub(crate) async fn stream(ws: ws::WebSocket, streamfrom: usize, vms: &State<Vir
                     let _ = channel.send(Message::binary(&buffer[0..data_bytes])).await?;
                 } 
                 else {
-                    debug!("TCP/Unix stream closed");
+                    info!("TCP/Unix stream closed");
                     channel.close(None).await?;
                 }
             }
@@ -53,8 +49,8 @@ fn getaddr(streamfrom: usize, virtual_machines: Vec<Arc<Mutex<Vmid>>>) -> io::Re
 
 #[test]
 fn test() {
-    use crate::config::vmids::{preload, addmutex};
-    let vmid = addmutex::run(preload::run(5900,4));
+    use crate::config::vmids::{make, addmutex};
+    let vmid = addmutex::run(make::vmid_vec(5900,4));
 
     //test 0
     assert_eq!(getaddr(0, vmid.clone()).unwrap(), SocketAddr::from(([127, 0, 0, 1], 5900)));

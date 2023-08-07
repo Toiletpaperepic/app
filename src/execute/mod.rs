@@ -1,5 +1,5 @@
 use std::{process::Command, usize, sync::{Arc, Mutex}};
-use crate::config::{vmids::preload::Vmid, Config};
+use crate::{config::{vmids::Vmid, Config}, Args};
 use serde::Serialize;
 use rocket::{
     serde::json::{
@@ -10,13 +10,14 @@ use rocket::{
 
 pub(crate) struct VirtualMachines {
     pub virtual_machines: Vec<Arc<Mutex<Vmid>>>,
-    pub config: Config
+    pub config: Config,
+    pub args: Args
 }
 
 #[derive(Serialize)]
 struct VmList {
     runing: bool,
-    vmid: i32
+    vmid: usize
 }
 
 #[get("/statistics", format = "application/json")]
