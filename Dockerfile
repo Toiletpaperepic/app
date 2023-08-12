@@ -8,7 +8,7 @@
 # Create a stage for building the application.
 
 ARG RUST_VERSION=1.71.0
-ARG APP_NAME=app
+ARG APP_NAME=untitled
 FROM rust:${RUST_VERSION}-slim-bullseye AS build
 ARG APP_NAME
 WORKDIR /app
@@ -63,7 +63,7 @@ RUN chmod -v a+wt /etc/app/config/
 USER appuser
 
 # Copy the executable from the "build" stage.
-COPY lib/admin /var/www/admin
+COPY lib/setup /var/www/setup
 COPY lib/frontend /var/www/frontend
 COPY lib/noVNC /var/www/noVNC
 COPY --from=build /bin/server /bin/

@@ -17,21 +17,21 @@ use crate::{
     execute::{
         statistics, start_qemu, stop_qemu
     },
-    websocket::stream,
-    admin::console,
     common::{
         favicon, index
+    },
+    websocket::{
+        setup::console,
+        stream::stream
     }
 };
 use rocket::{fairing::AdHoc, fs::FileServer, response::content::RawHtml};
-use std::{path::PathBuf, fmt};
+use std::path::PathBuf;
 use clap::Parser;
 mod websocket;
-mod version;
 mod execute;
 mod common;
 mod config;
-mod admin;
 
 #[derive(Debug)]
 pub enum Error {
@@ -39,39 +39,30 @@ pub enum Error {
     Std(std::io::Error)
 }
 
-impl fmt::Display for Error {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{:?}", self)
-    }
-}
-
+/// A server
 #[derive(Parser, Debug)]
-#[command(author, about, long_about = None)]
+#[command(author, version, about, long_about = None)]
 pub(crate) struct Args {
-    ///setup your server configuration...
+    ///setup your server configuration,
+    ///this will open Manual Setup,
+    ///Guided Setup is not available.
     #[arg(long)]
     setup: bool,
 
-    ///Properties file to use
+    ///Config file to use. 
+    ///Default file "config\config.json"
     #[arg(short, long)]
-    config: Option<PathBuf>,
-    
-    ///Print version
-    #[arg(short, long)]
-    version: bool
+    config: Option<PathBuf>
 }
 
 #[launch]
 fn rocket() -> _ {
     let args = Args::parse();
-    let setup = args.setup.clone();
-    if args.version {
-        version::version()
-    }
 
     rocket::build()
         .attach(AdHoc::on_ignite("startup", move |rocket| Box::pin(async move {
-            info!("Starting App_Untitled. (version: {})", env!("CARGO_PKG_VERSION"));
+            info!("Starting Untitled. (version: {})", env!("CARGO_PKG_VERSION"));
+            let setup = args.setup.clone();
             let vms = config::config(args).unwrap();
             let static_files = vms.config.static_files.clone().display().to_string();
 
@@ -79,8 +70,7 @@ fn rocket() -> _ {
                 rocket
                     .manage(vms)
                     .mount("/home", FileServer::from(format!("{}/frontend", static_files)))
-                    .mount("/noVNC", FileServer::from(format!("{}/noVNC", static_files)))
-                    .mount("/admin", FileServer::from(format!("{}/admin", static_files)))
+                    .mount("/setup", FileServer::from(format!("{}/setup", static_files)))
                     .mount("/api", routes![console])
             } else {
                 #[get("/<response>")]
@@ -91,9 +81,9 @@ fn rocket() -> _ {
                     .manage(vms)
                     .mount("/home", FileServer::from(format!("{}/frontend", static_files)))
                     .mount("/noVNC", FileServer::from(format!("{}/noVNC", static_files)))
+                    .mount("/api", routes![stream, stop_qemu, start_qemu, statistics])
                     .mount("/admin", routes![admin])
             }
         })))
-        .mount("/api", routes![stream ,stop_qemu, start_qemu, statistics])
         .mount("/", routes![index, favicon])
 }

@@ -1,5 +1,5 @@
-use std::{process::Command, usize, sync::{Arc, Mutex}};
-use crate::{config::{vmids::Vmid, Config}, Args};
+use std::{process::Command, usize, sync::{Arc, Mutex}, path::PathBuf};
+use crate::config::{vmids::Vmid, Config};
 use serde::Serialize;
 use rocket::{
     serde::json::{
@@ -11,7 +11,7 @@ use rocket::{
 pub(crate) struct VirtualMachines {
     pub virtual_machines: Vec<Arc<Mutex<Vmid>>>,
     pub config: Config,
-    pub args: Args
+    pub setup: bool
 }
 
 #[derive(Serialize)]
@@ -61,7 +61,7 @@ pub(crate) fn start_qemu(number: usize, vms: &State<VirtualMachines>) -> Value {
             args.push(format!(":{}", vmid_lock.port - 5900));
             info!("{:#?}", args);
 
-            let vm = Command::new(vms.config.qemu_bin.clone())
+            let vm = Command::new(vms.config.qemu_bin.clone().get_or_insert(PathBuf::from("qemu-system-x86_64")).to_path_buf())
                 .args(&args)
                 .spawn()
                 .expect("command failed to start");

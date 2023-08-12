@@ -7,8 +7,8 @@ use std::{
 
 #[get("/")]
 pub(crate) fn index(vms: &State<VirtualMachines>) -> Redirect {
-    if vms.args.setup {
-        Redirect::to(uri!("/admin/index.html"))
+    if vms.setup {
+        Redirect::to(uri!("/setup/index.html"))
     } else {
         Redirect::to(uri!("/home/index.html"))
     }

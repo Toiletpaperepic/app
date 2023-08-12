@@ -1,6 +1,6 @@
 {
     "qemu_bin": "qemu-system-i386",
-    "qemu_args": "config/vmids.json",
+    "vmids": "config/vmids.json",
     "static_files": "lib",
     "stream_buffer": 10000,
     "start_port": 5900
