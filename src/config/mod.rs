@@ -5,7 +5,7 @@ use self::vmids::Vmid;
 pub(crate) mod vmids;
 
 #[derive(Serialize, Deserialize, Default, Debug)]
-pub(crate) struct VmidConfig(pub Vec<Vmid>);
+pub(crate) struct VmidConfig(pub String, pub Vec<Vmid>);
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub(crate) struct Config {
@@ -30,5 +30,9 @@ pub(crate) fn config(mut args: Args) -> Result<VirtualMachines, Error> {
 
     test_run(config.qemu_bin.clone().get_or_insert(PathBuf::from("qemu-system-x86_64")).to_path_buf());
 
-    return Ok(vmids::config(config, args)?);
+    return Ok(VirtualMachines { 
+        virtual_machines: vmids::config(config.vmids.clone(), args.setup.clone())?, 
+        config, 
+        setup: args.setup 
+    });
 }

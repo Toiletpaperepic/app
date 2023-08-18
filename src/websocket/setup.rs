@@ -1,19 +1,20 @@
-use crate::{config::{vmids::{new, Vmid}, VmidConfig}, execute::VirtualMachines};
+use crate::{config::{vmids::new, VmidConfig}, execute::VirtualMachines};
 use rocket::{futures::{StreamExt, SinkExt}, State};
 use std::{path::PathBuf, fs::File, io::Write};
 use clap::{Command, arg, value_parser};
-use rocket::Shutdown;
+// use rocket::Shutdown;
 
 enum Commands {
     Quit,
-    Vmid(Vmid),
+    // Save,
+    // Vmid(Vmid),
     Message(String)
 }
 
 #[get("/console")]
-pub(crate) fn console(ws: ws::WebSocket, shutdown: Shutdown, vms: &State<VirtualMachines>) -> ws::Channel<'static> {
-    let vmidfile = vms.config.vmids.clone();
-    let mut vmids: Vec<Vmid> = Vec::new();
+pub(crate) fn console(ws: ws::WebSocket, /*shutdown: Shutdown,*/ vms: &State<VirtualMachines>) -> ws::Channel<'static> {
+    let vmidfile = vms.config.vmids.clone().get_or_insert(PathBuf::from("config/vmids.json")).to_path_buf();
+    // let mut vmids = Vec::new();
 
     ws.channel(move |mut channel| Box::pin(async move {
         let _ = channel.send("link standby...".into()).await;
@@ -24,29 +25,39 @@ pub(crate) fn console(ws: ws::WebSocket, shutdown: Shutdown, vms: &State<Virtual
                 break;
             }
 
-            match respond(message.into_text()?.as_str(), vmidfile.clone().get_or_insert(PathBuf::from("config/vmids.json")).to_path_buf()) {
+            match respond(message.into_text()?.as_str(), vmidfile.clone()) {
                 Ok(Commands::Quit) => {
                     let _ = channel.send("Received 'EXIT': Server is Going down!".into()).await;
                     info!("Received 'EXIT': Server is Going down!");
-                    shutdown.clone().notify();
                     channel.close(None).await?;
                 }
-                Ok(Commands::Vmid(vmid)) => {
-                    vmids.push(vmid);
-                    let _ = channel.send(format!("done {:#?}!", vmids).into()).await;
-                    info!("done {:#?}!", vmids);
-                }
+                // Ok(Commands::Save) => {
+                //     let mut file = File::create(vmidfile.clone())?;
+                //     file.write_all(serde_json::to_string_pretty(&VmidConfig(vmids)).unwrap().as_bytes())?;
+
+                //     let _ = channel.send(format!("done {:#?}!", vmids).into()).await;
+                //     info!("done {:#?}!", vmids);
+                // }
+                // Ok(Commands::Vmid(vmid)) => {
+                //     vmids.push(vmid);
+                //     let _ = channel.send(format!("done {:#?}!", vmids).into()).await;
+                //     info!("done {:#?}!", vmids);
+                // }
                 Ok(Commands::Message(message)) => {
                     let _ = channel.send(message.clone().into()).await;
                     info!("{}", message)
                 }
                 Err(err) => {
-                    info!("{}", err);
+                    error!("{}", err);
                     let _ = channel.send(err.into()).await;
                 }
             }
             let _ = channel.send("link standby...".into()).await;
         }
+        // info!("Saving {:#?}", vmids);
+        // vms.virtual_machines.append(&mut vmids.into_iter().map(|vals| Arc::new(Mutex::new(vals))).collect::<Vec<_>>());
+
+        // shutdown.clone().notify();
         Ok(())
     }))
 }
@@ -63,7 +74,7 @@ fn respond(line: &str, vmidfile: PathBuf) -> Result<Commands, String> {
             let port = matches.get_one::<u16>("port").ok_or(0).map_err(|err| err.to_string())?;
             let vmids = matches.get_one::<usize>("vmids").ok_or(0).map_err(|err| err.to_string())?;
 
-            let vmids = serde_json::to_string_pretty(&VmidConfig(new::vmid(*port, *vmids)))
+            let vmids = serde_json::to_string_pretty(&VmidConfig("farts balls".to_string() ,new::vmid(*port, *vmids)))
                 .map_err(|e| e.to_string())?;
 
             let mut file = File::create(vmidfile).map_err(|e| e.to_string())?;
@@ -71,27 +82,26 @@ fn respond(line: &str, vmidfile: PathBuf) -> Result<Commands, String> {
 
             return Ok(Commands::Message(format!("done! {}", vmids)));
         }
-        Some(("new", matches)) | Some(("init", matches)) => {
-            let port = matches.get_one::<u16>("port").get_or_insert(&0).clone();
-            let vmid = matches.get_one::<usize>("vmid").get_or_insert(&0).clone();
-            let name = matches.get_one::<String>("name").get_or_insert(&"No Name".to_string()).clone();
-            let args = matches.get_many::<String>("args").map(|vals| vals.collect::<Vec<_>>()).ok_or("nut".to_string())?;
-            let mut qemu_arg = Vec::new();
+        // Some(("new", matches)) | Some(("init", matches)) => {
+        //     let port = matches.get_one::<u16>("port").get_or_insert(&0).clone();
+        //     let vmid = matches.get_one::<usize>("vmid").get_or_insert(&0).clone();
+        //     let name = matches.get_one::<String>("name").get_or_insert(&"No Name".to_string()).clone();
+        //     let args = matches.get_many::<String>("args").ok_or("fuck".to_string())?.map(|vals| vals.to_owned()).collect::<Vec<_>>();
 
-            for arg in args {
-                qemu_arg.push(arg.to_owned());
-            }
+        //     let vm = Vmid {
+        //         vmid_number: vmid,
+        //         name,
+        //         port,
+        //         qemu_arg: args,
+        //         child: None,
+        //         password: None,
+        //     };
 
-            let vm = Vmid {
-                vmid_number: vmid,
-                name,
-                port,
-                qemu_arg,
-                child: None,
-            };
-
-            return Ok(Commands::Vmid(vm));
-        }
+        //     return Ok(Commands::Vmid(vm));
+        // }
+        // Some(("save", _matches)) => {
+        //     return Ok(Commands::Save);
+        // }
         Some(("ping", _matches)) => {
             return Ok(Commands::Message("Pong".to_string()));
         }
@@ -102,6 +112,8 @@ fn respond(line: &str, vmidfile: PathBuf) -> Result<Commands, String> {
         None => unreachable!("subcommand required"),
     }
 }
+
+// fn save 
 
 fn cli() -> Command {
     // strip out usage
@@ -135,27 +147,27 @@ fn cli() -> Command {
                         .required(true)
                         .value_parser(value_parser!(usize))
                 ]),
-            Command::new("new")
-                .alias("init")
-                .about("make a new Virtual Machines.")
-                .help_template(APPLET_TEMPLATE)
-                .args([
-                    arg!(port: -p --port <PORT> "Starting Port.")
-                        .required(false)
-                        .value_parser(value_parser!(u16)),
-                    arg!(vmid: -v --vmid <VMID> "Your Virtual Machines VMID.")
-                        .required(true)
-                        .value_parser(value_parser!(usize)),
-                    arg!(name: -n --name <NAME> "The name for your Virtual Machines.")
-                        .required(false)
-                        .value_parser(value_parser!(String)),
-                    arg!(args: [ARGS] "the command line arguments for qemu.")
-                        .num_args(1..)
-                        .required(true)
-                        .value_parser(value_parser!(String))
-                ]),
-            Command::new("save")
-                .help_template(APPLET_TEMPLATE),
+            // Command::new("new")
+            //     .alias("init")
+            //     .about("make a new Virtual Machines.")
+            //     .help_template(APPLET_TEMPLATE)
+            //     .args([
+            //         arg!(port: -p --port <PORT> "Starting Port.")
+            //             .required(false)
+            //             .value_parser(value_parser!(u16)),
+            //         arg!(vmid: -v --vmid <VMID> "Your Virtual Machines VMID.")
+            //             .required(true)
+            //             .value_parser(value_parser!(usize)),
+            //         arg!(name: -n --name <NAME> "The name for your Virtual Machines.")
+            //             .required(false)
+            //             .value_parser(value_parser!(String)),
+            //         arg!(args: [ARGS] "the command line arguments for qemu.")
+            //             .num_args(1..)
+            //             .required(true)
+            //             .value_parser(value_parser!(String))
+            //     ]),
+            // Command::new("save")
+            //     .help_template(APPLET_TEMPLATE),
             Command::new("ping")
                 .about("Get a response")
                 .help_template(APPLET_TEMPLATE),

@@ -1,9 +1,14 @@
-use rocket::{response::Redirect, State};
+use rocket::{response::Redirect, http::Status, State};
 use crate::execute::VirtualMachines;
 use std::{
     path::PathBuf,
     process::{Command, Stdio},
 };
+
+#[get("/<response>")]
+pub(crate) fn apiserviceunavailable(response: Option<&str>) -> (Status, String) {
+    (Status::ServiceUnavailable, format!("Server is in setup mode: '{}' is unavailable.", response.unwrap_or_default()))
+}
 
 #[get("/")]
 pub(crate) fn index(vms: &State<VirtualMachines>) -> Redirect {

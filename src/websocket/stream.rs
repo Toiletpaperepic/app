@@ -53,8 +53,8 @@ fn getaddr(streamfrom: usize, virtual_machines: Vec<Arc<Mutex<Vmid>>>) -> io::Re
 
 #[test]
 fn test() {
-    use crate::config::vmids::{new, addmutex};
-    let vmid = addmutex(new::vmid(5900,4));
+    use crate::config::vmids::new;
+    let vmid = new::vmid(5900,4).into_iter().map(|vals| Arc::new(Mutex::new(vals))).collect::<Vec<_>>();
 
     //test 0
     assert_eq!(getaddr(0, vmid.clone()).unwrap(), SocketAddr::from(([127, 0, 0, 1], 5900)));

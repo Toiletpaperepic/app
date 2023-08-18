@@ -1,39 +1,12 @@
 [
-  {
-    "vmid_number": 0,
-    "name": "No Name",
-    "port": 5900,
-    "qemu_arg": [
-      "-m",
-      "512",
-      "-cdrom",
-      "d:/iso/plpbt.iso",
-      "-device",
-      "sb16"
+  "",
+  [
+    {
+      "vmid_number": 0,
+      "name": "No Name",
+      "port": 5900,
+      "qemu_arg": [],
+      "password": null
+    }
   ]
-  },
-  {
-    "vmid_number": 1,
-    "name": "No Name",
-    "port": 5901,
-    "qemu_arg": []
-  },
-  {
-    "vmid_number": 2,
-    "name": "No Name",
-    "port": 5902,
-    "qemu_arg": []
-  },
-  {
-    "vmid_number": 3,
-    "name": "No Name",
-    "port": 5903,
-    "qemu_arg": []
-  },
-  {
-    "vmid_number": 4,
-    "name": "No Name",
-    "port": 5904,
-    "qemu_arg": []
-  }
 ]

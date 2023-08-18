@@ -11,6 +11,7 @@ pub(crate) fn vmid(mut qenu_port: u16, vmids: usize) -> Vec<Vmid> {
             port: qenu_port,
             child: None::<Child>,
             qemu_arg: vec![],
+            password: None,
             name: "No Name".to_string(),
         };
         info!("preloading.... {:#?}", vmid);

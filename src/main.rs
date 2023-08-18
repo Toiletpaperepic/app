@@ -18,7 +18,7 @@ use crate::{
         statistics, start_qemu, stop_qemu
     },
     common::{
-        favicon, index
+        favicon, index, apiserviceunavailable
     },
     websocket::{
         setup::console,
@@ -26,17 +26,19 @@ use crate::{
     }
 };
 use rocket::{fairing::AdHoc, fs::FileServer, response::content::RawHtml};
-use std::path::PathBuf;
+use std::{path::PathBuf, io};
 use clap::Parser;
 mod websocket;
 mod execute;
 mod common;
 mod config;
 
+#[non_exhaustive]
 #[derive(Debug)]
 pub enum Error {
     ConfigError(serde_json::Error),
-    Std(std::io::Error)
+    Std(std::io::Error),
+    Io(io::Error)
 }
 
 /// A server
@@ -71,7 +73,7 @@ fn rocket() -> _ {
                     .manage(vms)
                     .mount("/home", FileServer::from(format!("{}/frontend", static_files)))
                     .mount("/setup", FileServer::from(format!("{}/setup", static_files)))
-                    .mount("/api", routes![console])
+                    .mount("/api", routes![console, apiserviceunavailable])
             } else {
                 #[get("/<response>")]
                 fn admin(response: Option<&str>) -> RawHtml<String> {

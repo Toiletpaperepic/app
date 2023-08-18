@@ -17,6 +17,7 @@ pub(crate) struct VirtualMachines {
 #[derive(Serialize)]
 struct VmList {
     runing: bool,
+    name: String,
     vmid: usize
 }
 
@@ -27,6 +28,7 @@ pub(crate) fn statistics(vms: &State<VirtualMachines>) -> Value {
         let vmid_lock = vmid.lock().unwrap();
         vm_list.push(VmList {
             runing: vmid_lock.child.is_some(),
+            name: vmid_lock.name.clone(),
             vmid: vmid_lock.vmid_number
         });
     }
