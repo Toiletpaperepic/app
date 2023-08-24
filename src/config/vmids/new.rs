@@ -19,7 +19,7 @@ pub(crate) fn vmid(mut qenu_port: u16, vmids: usize) -> Vec<Vmid> {
         qenu_port += 1;
     }
 
-    return vec;
+    vec
 }
 
 #[test]

@@ -1,5 +1,5 @@
-use std::{fs, process::Child, sync::{Mutex, Arc}, path::PathBuf};
-use crate::{config::VmidConfig, Error};
+use std::{process::Child, sync::{Mutex, Arc}, path::PathBuf};
+use crate::{Error, pool::load_pool};
 use serde::{Deserialize, Serialize};
 pub(crate) mod new;
 
@@ -15,18 +15,14 @@ pub(crate) struct Vmid {
     pub child: Option<Child>
 }
 
-pub(super) fn config(mut vmids: Option<PathBuf>, setup: bool) -> Result<Vec<Arc<Mutex<Vmid>>>, Error> {
+pub(super) fn config(mut pool: Option<PathBuf>, setup: bool) -> Result<Vec<Arc<Mutex<Vmid>>>, Error> {
     let virtual_machines = if setup {
-        VmidConfig::default()
+        Default::default()
     } else {
-        serde_json::from_str(
-            fs::read_to_string(vmids.get_or_insert(PathBuf::from("config/vmids.json")))
-                .map_err(|err| Error::Std(err))?
-                .as_str(),
-        ).map_err(|err| Error::ConfigError(err))?
+        load_pool(pool.get_or_insert(PathBuf::from("./pool")).to_path_buf())?
     };
 
-    info!("deserialized = {:#?}", virtual_machines);
+    // info!("deserialized = {:#?}", virtual_machines);
 
-    return Ok(virtual_machines.1.into_iter().map(|vals| Arc::new(Mutex::new(vals))).collect::<Vec<_>>())
+    Ok(virtual_machines.into_iter().map(|vals| Arc::new(Mutex::new(vals))).collect::<Vec<_>>())
 }

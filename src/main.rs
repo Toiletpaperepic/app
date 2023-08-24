@@ -32,16 +32,18 @@ mod websocket;
 mod execute;
 mod common;
 mod config;
+mod pool;
 
 #[non_exhaustive]
 #[derive(Debug)]
 pub enum Error {
-    ConfigError(serde_json::Error),
+    ConfigErrorDe(toml::de::Error),
+    ConfigErrorSer(toml::ser::Error),
     Std(std::io::Error),
-    Io(io::Error)
+    Io(io::Error),
+    Unknown
 }
 
-/// A server
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
 pub(crate) struct Args {
@@ -64,7 +66,7 @@ fn rocket() -> _ {
     rocket::build()
         .attach(AdHoc::on_ignite("startup", move |rocket| Box::pin(async move {
             info!("Starting Untitled. (version: {})", env!("CARGO_PKG_VERSION"));
-            let setup = args.setup.clone();
+            let setup = args.setup;
             let vms = config::config(args).unwrap();
             let static_files = vms.config.static_files.clone().display().to_string();
 

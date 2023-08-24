@@ -5,3 +5,6 @@
 	path = lib/Rocket
 	url = https://github.com/SergioBenitez/Rocket
 	branch = master
+[submodule "lib/rocket_auth"]
+	path = lib/rocket_auth
+	url = https://github.com/tvallotton/rocket_auth.git

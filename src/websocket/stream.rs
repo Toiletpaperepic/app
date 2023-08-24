@@ -15,7 +15,7 @@ pub(crate) async fn stream(ws: ws::WebSocket, streamfrom: usize, vms: &State<Vir
                 if let Some(message) = message {
                     let message = message?;
                     if message.is_binary() {
-                        stream.write(&Message::binary(message).into_data()).await?;
+                        stream.write_all(&Message::binary(message).into_data()).await?;
                     }
                     else if message.is_close() {
                         channel.close(None).await?; 
@@ -28,7 +28,7 @@ pub(crate) async fn stream(ws: ws::WebSocket, streamfrom: usize, vms: &State<Vir
             data_bytes = stream.read(&mut buffer) => {
                 let data_bytes = data_bytes?;
                 if data_bytes > 0 {
-                    let _ = channel.send(Message::binary(&buffer[0..data_bytes])).await?;
+                    channel.send(Message::binary(&buffer[0..data_bytes])).await?;
                 } 
                 else {
                     info!("TCP/Unix stream closed");
@@ -45,9 +45,9 @@ fn getaddr(streamfrom: usize, virtual_machines: Vec<Arc<Mutex<Vmid>>>) -> io::Re
         let addr = SocketAddr::from(([127, 0, 0, 1], vmid.lock().unwrap().port));
         info!("addr = {}", addr);
             
-        return Ok(addr);
+        Ok(addr)
     } else {
-        return Err(Error::new(ErrorKind::NotFound,"The Requested VM Doesn't exist."));
+        Err(Error::new(ErrorKind::NotFound,"The Requested VM Doesn't exist."))
     }
 }
 

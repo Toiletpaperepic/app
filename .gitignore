@@ -1,3 +1,5 @@
 /target
 *.pem
 Cargo.lock
+/packup
+/pool

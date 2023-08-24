@@ -31,10 +31,9 @@ pub(crate) fn test_run(qemu: PathBuf) {
         .stdout(Stdio::piped())
         .output();
 
-    if child.is_err() {
-        panic!("Invalid QEMU Binary: {}", child.unwrap_err());
-    } else {
-        let version_msg = String::from_utf8_lossy(&child.expect("Command Failed").stdout).to_string();
-        info!("Found {}", version_msg.clone().as_str().replace("\n", " ").replace("\r", " "));
+    if let Err(output) = child {
+        panic!("Invalid QEMU Binary: {}", output);
+    } else if let Ok(output) = child {
+        info!("Found {}", String::from_utf8_lossy(&output.stdout).to_string().replace(|x| x == '\n' || x == '\r', " "));
     }
 }

@@ -32,7 +32,7 @@ pub(crate) fn statistics(vms: &State<VirtualMachines>) -> Value {
             vmid: vmid_lock.vmid_number
         });
     }
-    return json!({"vm_list": vm_list});
+    json!({"vm_list": vm_list})
 }
 
 #[get("/stop?<number>", format = "application/json")]
@@ -41,13 +41,13 @@ pub(crate) fn stop_qemu(number: usize, vms: &State<VirtualMachines>) -> Value {
         let vmid_lock = &mut vms.virtual_machines[number].lock().unwrap();
         if vmid_lock.child.is_some() {
             vmid_lock.child.as_mut().unwrap().kill().unwrap();
-            vmid_lock.child = None.into();
-            return json!({"status": "ok"});
+            vmid_lock.child = None;
+            json!({"status": "ok"})
         } else {
-            return json!({"status": "Failed", "Reason": "It's not Running."});
+            json!({"status": "Failed", "Reason": "It's not Running."})
         }
     } else {
-        return json!({"Status": "Failed", "Reason": "The Requested VM Doesn't exist."});
+        json!({"Status": "Failed", "Reason": "The Requested VM Doesn't exist."})
     }
 }
 
@@ -63,21 +63,21 @@ pub(crate) fn start_qemu(number: usize, vms: &State<VirtualMachines>) -> Value {
             args.push(format!(":{}", vmid_lock.port - 5900));
             info!("{:#?}", args);
 
-            let vm = Command::new(vms.config.qemu_bin.clone().get_or_insert(PathBuf::from("qemu-system-x86_64")).to_path_buf())
+            let vm = Command::new(vms.config.qemu_bin.clone().get_or_insert(PathBuf::from("qemu-system-x86_64")))
                 .args(&args)
                 .spawn()
                 .expect("command failed to start");
 
             vmid_lock.child = Some(vm);
 
-            return json!({
+            json!({
                 "status": "ok",
                 "vmid": vmid_lock.vmid_number
-            });
+            })
         } else {
-            return json!({"status": "Failed", "Reason": "It's already running."});
+            json!({"status": "Failed", "Reason": "It's already running."})
         }
     } else {
-        return json!({"Status": "Failed", "Reason": "The Requested VM Doesn't exist."});
+        json!({"Status": "Failed", "Reason": "The Requested VM Doesn't exist."})
     }
 }
