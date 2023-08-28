@@ -1,51 +1,57 @@
-use crate::{config::vmids::Vmid, Error};
 use std::{path::PathBuf, fs::{self, File}, io::Write};
+use crate::{config::vmids::Vmid, Error};
+use serde::{Serialize, Deserialize};
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+struct Index(Vec<PathBuf>);
 
 pub(crate) fn new_pool(dir: PathBuf, pool: Vec<Vmid>) -> Result<(), Error> {
+    let mut pool_paths = Vec::new();
     if dir.exists() {
         debug!("{} exists: skiping..", dir.display().to_string())
     } else {
-        fs::create_dir(dir.clone()).map_err(Error::Io)?;
+        fs::create_dir_all(dir.clone()).map_err(Error::Io)?;
     }
 
-    let mut look = Vec::new();
-
     for vmid in pool {
-        let mut path = dir.clone();
-        path.push(vmid.vmid_number.clone().to_string());
+        let mut path = dir.join(vmid.vmid_number.clone().to_string());
 
         if path.exists() {
             debug!("{} exists: skiping..", path.display().to_string())
         } else {
             fs::create_dir(path.clone()).map_err(Error::Io)?;
-            look.push(path.clone());
+            pool_paths.push(path.clone());
             path.push("config.json");
 
-            let serialized = toml::to_string_pretty(&vmid).map_err(Error::ConfigErrorSer)?;
+            let serialized = serde_json::to_string_pretty(&vmid).map_err(Error::ConfigError)?;
             File::create(path).map_err(Error::Io)?.write_all(serialized.as_bytes()).map_err(Error::Io)?;
         }
     }
-    println!("{:?}", look);
+    File::create(dir.join("index.json")).map_err(Error::Io)?.write_all(serde_json::to_string_pretty(&Index(pool_paths)).map_err(Error::ConfigError)?.as_bytes()).map_err(Error::Io)?;
+
     Ok(())
 }
 
 pub(crate) fn load_pool(dir: PathBuf) -> Result<Vec<Vmid>, Error> {
     info!("{}", dir.clone().display());
-    let paths = fs::read_dir(dir).map_err(Error::Io)?;
     let mut pool = Vec::new();
 
-    for path in paths {
-        let mut path = path.map_err(Error::Io)?.path();
-        path.push("config.json");
+    let index: Index = serde_json::from_str(
+        &fs::read_to_string(dir.join("index.json"))
+        .map_err(Error::Io)?)
+        .map_err(Error::ConfigError)?;
 
-        info!("{}", path.clone().display());
-
-        let vmid: Vmid = toml::from_str(
-            &fs::read_to_string(path)
+    for path in index.0 {
+        info!("{}", path.display().to_string());
+        
+        let mut vmid: Vmid = serde_json::from_str(
+            &fs::read_to_string(path.join("config.json"))
             .map_err(Error::Io)?)
-            .map_err(Error::ConfigErrorDe)?;
+            .map_err(Error::ConfigError)?;
 
-        pool.push(vmid);
+        vmid.path = Some(path);
+
+        pool.push(vmid)
     }
 
     Ok(pool)
@@ -62,14 +68,16 @@ mod tests {
     }
 
     #[test]
-    fn pool_test() -> Result<(), Error> {
+    fn new_pool_test() -> Result<(), Error> {
         init();
 
-        if PathBuf::from("./pool/test").exists() {
-            fs::remove_dir_all("./pool/test").map_err(|e| Error::Io(e))?; 
+        let path = PathBuf::from("./pool/test/1");
+
+        if path.clone().exists() {
+            fs::remove_dir_all(path.clone()).map_err(|e| Error::Io(e))?; 
         }
 
-        new_pool(PathBuf::from("./pool/test"), new::vmid(5900,5))?;
+        new_pool(path, new::vmid(5900,5))?;
 
         // fs::remove_dir_all("./pool/test").map_err(|e| Error::Io(e))?;
         Ok(())
@@ -79,13 +87,15 @@ mod tests {
     fn load_pool_test() -> Result<(), Error> {
         init();
 
-        if PathBuf::from("./pool/testload").exists() {
-            fs::remove_dir_all("./pool/testload").map_err(|e| Error::Io(e))?; 
+        let path = PathBuf::from("./pool/test/2");
+
+        if path.clone().exists() {
+            fs::remove_dir_all(path.clone()).map_err(|e| Error::Io(e))?; 
         }
 
-        new_pool(PathBuf::from("./pool/testload"), new::vmid(5900,5))?;
+        new_pool(path.clone(), new::vmid(5900,5))?;
 
-        let pool = load_pool(PathBuf::from("./pool/testload"))?;
+        let pool = load_pool(path)?;
 
         // fs::remove_dir_all("./pool/testload").map_err(|e| Error::Io(e))?;
 

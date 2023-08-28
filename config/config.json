@@ -3,5 +3,11 @@
     "vmids": "config/vmids.json",
     "static_files": "lib",
     "stream_buffer": 10000,
-    "start_port": 5900
+    "start_port": 5900,
+    "default_args": [
+        "--m",
+        "512",
+        "-device",
+        "sb16"
+    ]
 }

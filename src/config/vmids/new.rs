@@ -13,6 +13,7 @@ pub(crate) fn vmid(mut qenu_port: u16, vmids: usize) -> Vec<Vmid> {
             qemu_arg: vec![],
             password: None,
             name: "No Name".to_string(),
+            path: None,
         };
         info!("preloading.... {:#?}", vmid);
         vec.push(vmid);

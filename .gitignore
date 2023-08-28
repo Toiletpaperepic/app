@@ -1,5 +1,8 @@
 /target
+/install/target
+/install/dir
 *.pem
 Cargo.lock
 /packup
 /pool
+*.exe

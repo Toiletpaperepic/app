@@ -61,10 +61,12 @@ pub(crate) fn start_qemu(number: usize, vms: &State<VirtualMachines>) -> Value {
             let mut args = vmid_lock.qemu_arg.clone();
             args.push("-vnc".to_string());
             args.push(format!(":{}", vmid_lock.port - 5900));
+            args.append(&mut vms.config.default_args.clone().unwrap_or_default());
             info!("{:#?}", args);
 
             let vm = Command::new(vms.config.qemu_bin.clone().get_or_insert(PathBuf::from("qemu-system-x86_64")))
                 .args(&args)
+                .current_dir(vmid_lock.path.clone().unwrap_or_else(|| PathBuf::from("./")))
                 .spawn()
                 .expect("command failed to start");
 

@@ -9,6 +9,7 @@ pub(crate) struct Config {
     pub pool: Option<PathBuf>,
     pub static_files: PathBuf,
     pub stream_buffer: Option<usize>,
+    pub default_args: Option<Vec<String>>,
     pub start_port: u16
 }
 
@@ -16,11 +17,11 @@ pub(crate) fn config(mut args: Args) -> Result<VirtualMachines, Error> {
     info!("Found {:#?}", args);
 
     info!("loading config...");
-    let config: Config = toml::from_str(
+    let config: Config = serde_json::from_str(
         fs::read_to_string(args.config.get_or_insert(PathBuf::from("config/config.json")))
             .expect("Unable to read the file: is it there? Maybe try --setup.")
             .as_str(),
-    ).map_err(Error::ConfigErrorDe)?;
+    ).map_err(Error::ConfigError)?;
 
     info!("Found {:#?}", config);
 

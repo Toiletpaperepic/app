@@ -37,8 +37,7 @@ mod pool;
 #[non_exhaustive]
 #[derive(Debug)]
 pub enum Error {
-    ConfigErrorDe(toml::de::Error),
-    ConfigErrorSer(toml::ser::Error),
+    ConfigError(serde_json::Error),
     Std(std::io::Error),
     Io(io::Error),
     Unknown

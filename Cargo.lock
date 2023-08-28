@@ -84,8 +84,8 @@ dependencies = [
  "rocket",
  "rocket_ws",
  "serde",
+ "serde_json",
  "shlex",
- "toml",
 ]
 
 [[package]]

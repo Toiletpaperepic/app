@@ -10,6 +10,7 @@ pub(crate) struct Vmid {
     pub port: u16,
     pub qemu_arg: Vec<String>,
     pub password: Option<String>,
+    pub path: Option<PathBuf>,
 
     #[serde(skip_serializing, skip_deserializing)]
     pub child: Option<Child>
