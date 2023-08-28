@@ -5,8 +5,7 @@ use super::Vmid;
 //only for testing
 pub(crate) fn vmid(vmids: usize) -> Result<Vec<Vmid>, Error> {
     let mut vec: Vec<Vmid> = Vec::new();
-    let id: usize = 0;
-    let qenu_port: u16 = 9500;
+    let mut qenu_port: u16 = 9500;
 
     for vmid_number in 0..vmids {
         let destination = if cfg!(unix) {

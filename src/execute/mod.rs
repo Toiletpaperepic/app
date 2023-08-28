@@ -60,9 +60,9 @@ pub(crate) fn start_qemu(number: usize, vms: &State<VirtualMachines>) -> Value {
             //adds "-vnc :0,websocket" to the arguments
             let mut args = vmid_lock.qemu_arg.clone();
             args.push("-vnc".to_string());
-            match vmid_lock.destination {
+            match &vmid_lock.destination {
                 Destination::Tcp(port) => args.push(format!(":{}", port.port())),
-                Destination::Unix(path) => args.push(format!("unix::{}", path.display().to_string())),
+                Destination::Unix(path) => args.push(format!("unix: {}", path.display().to_string())),
             }
             args.append(&mut vms.config.default_args.clone().unwrap_or_default());
             info!("{:#?}", args);

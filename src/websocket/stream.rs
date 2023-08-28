@@ -1,10 +1,10 @@
-use rocket::{tokio::{net::{TcpStream, UnixStream}, io::{AsyncReadExt, AsyncWriteExt, AsyncWrite, AsyncRead}}, futures::{StreamExt, SinkExt}, State};
+use rocket::{tokio::{net::{TcpStream, UnixStream}, io::{AsyncReadExt, AsyncWriteExt}}, futures::{StreamExt, SinkExt}, State};
 use std::{io::{self, ErrorKind, Error}, sync::{Mutex, Arc}, path::PathBuf, net::SocketAddr};
 use crate::{execute::VirtualMachines, config::vmids::Vmid};
 use serde::{Deserialize, Serialize};
 use ws::Message;
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub enum Destination {
     /// Connect to TCP
     Tcp(SocketAddr),
@@ -19,50 +19,78 @@ pub(crate) async fn stream(ws: ws::WebSocket, streamfrom: usize, vms: &State<Vir
     let mut buffer: Vec<u8> = vec![0; *vms.config.stream_buffer.clone().get_or_insert(10000)];
     let stream = getaddr(streamfrom, vms.virtual_machines.clone())?;
 
-    Ok(ws.channel(move |mut channel| Box::pin(async move {loop {
-        rocket::tokio::select! {
-            message = channel.next() => {
-                if let Some(message) = message {
-                    let message = message?;
-                    if message.is_binary() {
-                        stream.write_all(&Message::binary(message).into_data()).await?;
+    //why is this the only way that i can get it to work.
+    match stream {
+        Destination::Tcp(stream) => {
+            let mut stream = TcpStream::connect(stream).await?;
+            Ok(ws.channel(move |mut channel| Box::pin(async move {loop {
+                rocket::tokio::select! {
+                    message = channel.next() => {
+                        if let Some(message) = message {
+                            let message = message?;
+                            if message.is_binary() {
+                                stream.write_all(&Message::binary(message).into_data()).await?;
+                            }
+                            else if message.is_close() {
+                                channel.close(None).await?; 
+                                return Ok(());
+                            }
+                        } else {
+                            error!("No packet received from websocket");
+                        }
+                    },
+                    data_bytes = stream.read(&mut buffer) => {
+                        let data_bytes = data_bytes?;
+                        if data_bytes > 0 {
+                            channel.send(Message::binary(&buffer[0..data_bytes])).await?;
+                        } 
+                        else {
+                            info!("TCP/Unix stream closed");
+                            channel.close(None).await?;
+                        }
                     }
-                    else if message.is_close() {
-                        channel.close(None).await?; 
-                        return Ok(());
+                }
+            }})))
+        },
+        Destination::Unix(stream) => {
+            let mut stream = UnixStream::connect(stream).await?;
+            Ok(ws.channel(move |mut channel| Box::pin(async move {loop {
+                rocket::tokio::select! {
+                    message = channel.next() => {
+                        if let Some(message) = message {
+                            let message = message?;
+                            if message.is_binary() {
+                                stream.write_all(&Message::binary(message).into_data()).await?;
+                            }
+                            else if message.is_close() {
+                                channel.close(None).await?; 
+                                return Ok(());
+                            }
+                        } else {
+                            error!("No packet received from websocket");
+                        }
+                    },
+                    data_bytes = stream.read(&mut buffer) => {
+                        let data_bytes = data_bytes?;
+                        if data_bytes > 0 {
+                            channel.send(Message::binary(&buffer[0..data_bytes])).await?;
+                        } 
+                        else {
+                            info!("TCP/Unix stream closed");
+                            channel.close(None).await?;
+                        }
                     }
-                } else {
-                    error!("No packet received from websocket");
                 }
-            },
-            data_bytes = stream.read(&mut buffer) => {
-                let data_bytes = data_bytes?;
-                if data_bytes > 0 {
-                    channel.send(Message::binary(&buffer[0..data_bytes])).await?;
-                } 
-                else {
-                    info!("TCP/Unix stream closed");
-                    channel.close(None).await?;
-                }
-            }
-        }
-    }})))
+            }})))
+        },
+    }
 }
 
-fn getaddr<S>(streamfrom: usize, virtual_machines: Vec<Arc<Mutex<Vmid>>>) 
--> io::Result<S> 
-where 
-S: AsyncRead + AsyncWrite + std::marker::Unpin,
-{
+fn getaddr(streamfrom: usize, virtual_machines: Vec<Arc<Mutex<Vmid>>>) -> io::Result<Destination> {
     if virtual_machines.len() > streamfrom {
         let vmid = &virtual_machines[streamfrom].lock().unwrap();
-        let addr = vmid.destination;
 
-        Ok(match vmid.destination {
-            Destination::Tcp(port) => TcpStream::connect(port).await?,
-            #[cfg(unix)]
-            Destination::Unix(path) => UnixStream::connect(path).await?,
-        })
+        Ok(vmid.destination.clone())
     } else {
         Err(Error::new(ErrorKind::NotFound,"The Requested VM Doesn't exist."))
     }

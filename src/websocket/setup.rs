@@ -1,7 +1,7 @@
-use crate::{config::vmids::{new, Vmid}, pool::new_pool, execute::VirtualMachines};
+use crate::{config::vmids::{new, Vmid}, pool::new_pool, execute::VirtualMachines, websocket::stream::Destination};
 use rocket::{futures::{StreamExt, SinkExt}, State};
 use clap::{Command, arg, value_parser};
-use std::path::PathBuf;
+use std::{path::PathBuf, net::SocketAddr};
 use rocket::Shutdown;
 
 enum Commands {
@@ -22,13 +22,13 @@ pub(crate) fn console(ws: ws::WebSocket, shutdown: Shutdown , vms: &State<Virtua
                 break;
             }
 
-            let next_port = if vmids.is_empty() {
-                SocketAddr::from(([127, 0, 0, 1], 5900))
-            } else {
-                vmids[vmids.len() - 1].destination
-            };
+            // let next_port = if vmids.is_empty() {
+            //     SocketAddr::from(([127, 0, 0, 1], 5900))
+            // } else {
+            //     vmids[vmids.len() - 1].destination
+            // };
 
-            match respond(message.into_text()?.as_str(), vms.config.pool.clone().unwrap_or_else(|| PathBuf::from("./pool")), vmids.len(), next_port) {
+            match respond(message.into_text()?.as_str(), vms.config.pool.clone().unwrap_or_else(|| PathBuf::from("./pool")), vmids.len()/*, next_port*/) {
                 Ok(Commands::Quit) => {
                     let _ = channel.send("Received 'EXIT': Server is Going down!".into()).await;
                     info!("Received 'EXIT': Server is Going down!");
@@ -61,7 +61,7 @@ pub(crate) fn console(ws: ws::WebSocket, shutdown: Shutdown , vms: &State<Virtua
     }))
 }
 
-fn respond(line: &str, pool_dir: PathBuf, next_id: usize, next_port: u16) -> Result<Commands, String> {
+fn respond(line: &str, pool_dir: PathBuf, next_id: usize/*, next_port: u16*/) -> Result<Commands, String> {
     info!("{}", line);
     let args = shlex::split(line).ok_or("error: Invalid quoting")?;
     debug!("{:#?}", args);
@@ -73,12 +73,12 @@ fn respond(line: &str, pool_dir: PathBuf, next_id: usize, next_port: u16) -> Res
             let port = matches.get_one::<u16>("port").ok_or("Unknown".to_string())?;
             let vmids = matches.get_one::<usize>("vmids").ok_or("Unknown".to_string())?;
 
-            new_pool(pool_dir, new::vmid(*port, *vmids)).map_err(|e| format!("{:?}", e))?;
+            new_pool(pool_dir, new::vmid(*vmids).unwrap()).map_err(|e| format!("{:?}", e))?;
 
             Ok(Commands::Message(format!("done! {}", vmids)))
         }
         Some(("new", matches)) | Some(("init", matches)) => {
-            let port = **matches.get_one::<u16>("port").get_or_insert(&next_port);
+            let port = **matches.get_one::<u16>("port").get_or_insert(&0);
             let vmid = **matches.get_one::<usize>("vmid").get_or_insert(&next_id);
             let name = matches.get_one::<String>("name").ok_or("`name`is required".to_string())?.to_string();
             let args = matches.get_many::<String>("args").ok_or("`args`is required".to_string())?.map(|vals| vals.to_owned()).collect::<Vec<_>>();
@@ -86,7 +86,7 @@ fn respond(line: &str, pool_dir: PathBuf, next_id: usize, next_port: u16) -> Res
             Ok(Commands::Vmid(Vmid {
                 vmid_number: vmid,
                 name,
-                port,
+                destination: Destination::Tcp(SocketAddr::from(([127, 0, 0, 1], port))),
                 qemu_arg: args,
                 child: None,
                 password: None,
