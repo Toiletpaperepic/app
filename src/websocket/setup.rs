@@ -23,9 +23,9 @@ pub(crate) fn console(ws: ws::WebSocket, shutdown: Shutdown , vms: &State<Virtua
             }
 
             let next_port = if vmids.is_empty() {
-                5900
+                SocketAddr::from(([127, 0, 0, 1], 5900))
             } else {
-                vmids[vmids.len() - 1].port + 1
+                vmids[vmids.len() - 1].destination
             };
 
             match respond(message.into_text()?.as_str(), vms.config.pool.clone().unwrap_or_else(|| PathBuf::from("./pool")), vmids.len(), next_port) {

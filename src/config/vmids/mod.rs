@@ -1,5 +1,5 @@
 use std::{process::Child, sync::{Mutex, Arc}, path::PathBuf};
-use crate::{Error, pool::load_pool};
+use crate::{Error, pool::load_pool, websocket::stream::Destination};
 use serde::{Deserialize, Serialize};
 pub(crate) mod new;
 
@@ -7,7 +7,7 @@ pub(crate) mod new;
 pub(crate) struct Vmid {
     pub vmid_number: usize,
     pub name: String, 
-    pub port: u16,
+    pub destination: Destination,
     pub qemu_arg: Vec<String>,
     pub password: Option<String>,
     pub path: Option<PathBuf>,

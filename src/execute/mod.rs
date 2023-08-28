@@ -1,5 +1,5 @@
+use crate::{config::{vmids::Vmid, Config}, websocket::stream::Destination};
 use std::{process::Command, usize, sync::{Arc, Mutex}, path::PathBuf};
-use crate::config::{vmids::Vmid, Config};
 use serde::Serialize;
 use rocket::{
     serde::json::{
@@ -60,7 +60,10 @@ pub(crate) fn start_qemu(number: usize, vms: &State<VirtualMachines>) -> Value {
             //adds "-vnc :0,websocket" to the arguments
             let mut args = vmid_lock.qemu_arg.clone();
             args.push("-vnc".to_string());
-            args.push(format!(":{}", vmid_lock.port - 5900));
+            match vmid_lock.destination {
+                Destination::Tcp(port) => args.push(format!(":{}", port.port())),
+                Destination::Unix(path) => args.push(format!("unix::{}", path.display().to_string())),
+            }
             args.append(&mut vms.config.default_args.clone().unwrap_or_default());
             info!("{:#?}", args);
 
