@@ -77,7 +77,7 @@ mod tests {
             fs::remove_dir_all(path.clone()).map_err(|e| Error::Io(e))?; 
         }
 
-        new_pool(path, new::vmid(5900)?);
+        new_pool(path, new::vmid(5900)?)?;
 
         // fs::remove_dir_all("./pool/test").map_err(|e| Error::Io(e))?;
         Ok(())
@@ -93,7 +93,7 @@ mod tests {
             fs::remove_dir_all(path.clone()).map_err(|e| Error::Io(e))?; 
         }
 
-        new_pool(path.clone(), new::vmid(5900)?);
+        new_pool(path.clone(), new::vmid(5900)?)?;
 
         let pool = load_pool(path)?;
 

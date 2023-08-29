@@ -132,6 +132,11 @@ fn cli() -> Command {
                     arg!(port: -p --port <PORT> "Starting Port.")
                         .required(true)
                         .value_parser(value_parser!(u16)),
+                    #[cfg(unix)]
+                    arg!(unix: -u --unix <PORT> "the dir for Unix Socket.")
+                        .required(true)
+                        .conflicts_with("port")
+                        .value_parser(value_parser!(PathBuf)),
                     arg!(vmids: -v --vmids <PORT> "how many Virtual Machines you want.")
                         .required(true)
                         .value_parser(value_parser!(usize))
@@ -144,6 +149,11 @@ fn cli() -> Command {
                     arg!(port: -p --port <PORT> "Starting Port.")
                         .required(false)
                         .value_parser(value_parser!(u16)),
+                    #[cfg(unix)]
+                    arg!(unix: -u --unix <PORT> "the dir for Unix Socket.")
+                        .required(false)
+                        .conflicts_with("port")
+                        .value_parser(value_parser!(PathBuf)),
                     arg!(vmid: -v --vmid <VMID> "Your Virtual Machines VMID.")
                         .required(false)
                         .value_parser(value_parser!(usize)),
@@ -155,10 +165,9 @@ fn cli() -> Command {
                         .required(false)
                         .value_parser(value_parser!(String))
                 ]),
-            Command::new("save")
-                .help_template(APPLET_TEMPLATE),
             Command::new("ping")
                 .about("Get a response")
+                .hide(true)
                 .help_template(APPLET_TEMPLATE),
             Command::new("quit")
                 .alias("exit")

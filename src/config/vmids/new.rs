@@ -1,6 +1,10 @@
 use crate::{websocket::stream::Destination, Error};
-use std::{process::Child, path::PathBuf, net::SocketAddr};
+use std::process::Child;
 use super::Vmid;
+#[cfg(not(target_os = "linux"))]
+use std::net::SocketAddr;
+#[cfg(unix)]
+use std::path::PathBuf;
 
 //only for testing
 pub(crate) fn vmid(vmids: usize) -> Result<Vec<Vmid>, Error> {
@@ -8,13 +12,14 @@ pub(crate) fn vmid(vmids: usize) -> Result<Vec<Vmid>, Error> {
     let mut qenu_port: u16 = 9500;
 
     for vmid_number in 0..vmids {
-        let destination = if cfg!(unix) {
-            Destination::Unix(PathBuf::from("/tmp/"))
-        } else if cfg!(windows) {
-            Destination::Tcp(SocketAddr::from(([127, 0, 0, 1], qenu_port)))
-        } else {
-            Destination::Tcp(SocketAddr::from(([127, 0, 0, 1], qenu_port)))
-        };
+        let destination;
+        cfg_if::cfg_if! {
+            if #[cfg(unix)] { 
+                destination = Destination::Unix(PathBuf::from(format!("/tmp/vmp{}", vmid_number)))
+            } else {
+                destination = Destination::Tcp(SocketAddr::from(([127, 0, 0, 1], qenu_port)))
+            }
+        }
 
         let vmid = Vmid {
             vmid_number,

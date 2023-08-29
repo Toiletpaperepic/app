@@ -76,8 +76,9 @@ dependencies = [
 
 [[package]]
 name = "app"
-version = "0.2.8"
+version = "0.2.9"
 dependencies = [
+ "cfg-if",
  "clap",
  "env_logger",
  "log",
