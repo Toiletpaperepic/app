@@ -1,13 +1,13 @@
 use crate::{websocket::stream::Destination, Error};
 use std::process::Child;
 use super::Vmid;
-#[cfg(not(target_os = "linux"))]
+#[cfg(not(unix))]
 use std::net::SocketAddr;
 #[cfg(unix)]
 use std::path::PathBuf;
 
 //only for testing
-pub(crate) fn vmid(vmids: usize) -> Result<Vec<Vmid>, Error> {
+pub(crate) fn vmid(destination: Destination, vmids: usize) -> Result<Vec<Vmid>, Error> {
     let mut vec: Vec<Vmid> = Vec::new();
     let mut qenu_port: u16 = 9500;
 

@@ -70,8 +70,17 @@ fn respond(line: &str, pool_dir: PathBuf, next_id: usize/*, next_port: u16*/) ->
         .map_err(|e| e.to_string())?;
     match matches.subcommand() {
         Some(("quicksetup", matches)) => {
-            let port = matches.get_one::<u16>("port").ok_or("Unknown".to_string())?;
+            let port = matches.get_one::<u16>("port");
             let vmids = matches.get_one::<usize>("vmids").ok_or("Unknown".to_string())?;
+            let unix = matches.get_one::<PathBuf>("unix");
+
+            if port.is_some() {
+                //
+            } else if unix.is_some() {
+                //
+            } else {
+                panic!("nut")
+            };
 
             new_pool(pool_dir, new::vmid(*vmids).unwrap()).map_err(|e| format!("{:?}", e))?;
 
