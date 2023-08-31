@@ -146,7 +146,7 @@ fn cli() -> Command {
                         .required(true)
                         .value_parser(value_parser!(u16)),
                     #[cfg(unix)]
-                    arg!(unix: -u --unix <PORT> "the dir for Unix Socket.")
+                    arg!(unix: -u --unix <PORT> "the Directory for Unix Socket.")
                         .required(true)
                         .conflicts_with("port")
                         .value_parser(value_parser!(PathBuf)),
