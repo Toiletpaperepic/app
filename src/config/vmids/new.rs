@@ -1,25 +1,26 @@
 use crate::{websocket::stream::Destination, Error};
+use std::net::SocketAddr;
 use std::process::Child;
 use super::Vmid;
-#[cfg(not(unix))]
-use std::net::SocketAddr;
 #[cfg(unix)]
 use std::path::PathBuf;
 
+pub(crate) enum DestinationOption{
+    #[cfg(unix)]
+    Unix(PathBuf),
+    Tcp(u16)
+}
+
 //only for testing
-pub(crate) fn vmid(destination: Destination, vmids: usize) -> Result<Vec<Vmid>, Error> {
+pub(crate) fn vmid(destination_option: DestinationOption, vmids: usize) -> Result<Vec<Vmid>, Error> {
     let mut vec: Vec<Vmid> = Vec::new();
-    let mut qenu_port: u16 = 9500;
 
     for vmid_number in 0..vmids {
-        let destination;
-        cfg_if::cfg_if! {
-            if #[cfg(unix)] { 
-                destination = Destination::Unix(PathBuf::from(format!("/tmp/vmp{}", vmid_number)))
-            } else {
-                destination = Destination::Tcp(SocketAddr::from(([127, 0, 0, 1], qenu_port)))
-            }
-        }
+        let destination = match destination_option {
+            #[cfg(unix)]
+            DestinationOption::Unix(ref path) => Destination::Unix(path.join(format!("vmu{}", vmid_number))),
+            DestinationOption::Tcp(port) => Destination::Tcp(SocketAddr::from(([127, 0, 0, 1], port + <usize as TryInto<u16>>::try_into(vmid_number).unwrap()))),
+        };
 
         let vmid = Vmid {
             vmid_number,
@@ -32,7 +33,6 @@ pub(crate) fn vmid(destination: Destination, vmids: usize) -> Result<Vec<Vmid>, 
         };
         info!("preloading.... {:#?}", vmid);
         vec.push(vmid);
-        qenu_port += 1;
     }
 
     Ok(vec)
@@ -40,7 +40,7 @@ pub(crate) fn vmid(destination: Destination, vmids: usize) -> Result<Vec<Vmid>, 
 
 #[test]
 fn test() -> Result<(), Error> {
-    let vmid = vmid(5900)?;
+    let vmid = vmid(DestinationOption::Tcp(9500), 4)?;
 
     assert_eq!(vmid.len(), 4);
 

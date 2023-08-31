@@ -59,7 +59,7 @@ pub(crate) fn load_pool(dir: PathBuf) -> Result<Vec<Vmid>, Error> {
 
 #[cfg(test)]
 mod tests {
-    use crate::{config::vmids::new, Error};
+    use crate::{config::vmids::new::{self, DestinationOption}, Error};
     use super::{load_pool, new_pool};
     use std::{path::PathBuf, fs};
     
@@ -77,7 +77,7 @@ mod tests {
             fs::remove_dir_all(path.clone()).map_err(|e| Error::Io(e))?; 
         }
 
-        new_pool(path, new::vmid(5900)?)?;
+        new_pool(path, new::vmid(DestinationOption::Tcp(9500), 4)?)?;
 
         // fs::remove_dir_all("./pool/test").map_err(|e| Error::Io(e))?;
         Ok(())
@@ -93,7 +93,7 @@ mod tests {
             fs::remove_dir_all(path.clone()).map_err(|e| Error::Io(e))?; 
         }
 
-        new_pool(path.clone(), new::vmid(5900)?)?;
+        new_pool(path.clone(), new::vmid(DestinationOption::Tcp(9500), 4)?)?;
 
         let pool = load_pool(path)?;
 
