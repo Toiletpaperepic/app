@@ -1,5 +1,5 @@
 use rocket::{tokio::{net::TcpStream, io::{AsyncReadExt, AsyncWriteExt}}, futures::{StreamExt, SinkExt}, State};
-use std::{io::{self, ErrorKind, Error}, sync::{Arc, RwLock}, net::SocketAddr};
+use std::{io::{self, ErrorKind, Error}, sync::{Arc, RwLock}, net::SocketAddr, fmt};
 use crate::{execute::VirtualMachines, config::vmids::Vmid};
 use ws::{Message, stream::DuplexStream};
 use serde::{Deserialize, Serialize};
@@ -18,12 +18,13 @@ pub enum Destination {
     Unix(PathBuf),
 }
 
-impl Destination {
-    fn to_string(&self) -> String {
+impl fmt::Display for Destination {
+    // This trait requires `fmt` with this exact signature.
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             #[cfg(unix)]
-            Destination::Unix(unix) => unix.display().to_string(),
-            Destination::Tcp(tcp) => tcp.to_string(),
+            Destination::Unix(unix) => write!(f, "{}", unix.display()),
+            Destination::Tcp(tcp) => write!(f, "{}", tcp),
         }
     }
 }

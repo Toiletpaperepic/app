@@ -1,4 +1,3 @@
-#![feature(mutex_unpoison)]
 /*
 =================================================
                 xxxxxxxxxxxxx

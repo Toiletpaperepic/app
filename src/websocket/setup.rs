@@ -76,19 +76,22 @@ fn respond(line: &str, next_id: usize/*, mut channel: DuplexStream*/) -> Result<
             let vmids = matches.get_one::<usize>("vmids").ok_or("Unknown".to_string())?;
             #[cfg(unix)]
             let unix = matches.get_one::<PathBuf>("unix");
-            
 
             cfg_if::cfg_if! {
                 if #[cfg(unix)] {
-                    let destination_option = if port.is_some() {
-                        DestinationOption::Tcp(*port.unwrap())
-                    } else if unix.is_some() {
-                        DestinationOption::Unix(*unix.unwrap())
+                    let destination_option = if let Some(port) = port {
+                        DestinationOption::Tcp(*port)
+                    } else if let Some(unix) = unix {
+                        DestinationOption::Unix(unix.to_path_buf())
                     } else {
                         panic!("THE FUCK??")
                     };
                 } else {
-                    let destination_option = DestinationOption::Tcp(*port.unwrap());
+                    let destination_option = if let Some(port) = port {
+                        DestinationOption::Tcp(*port)
+                    } else {
+                        panic!("THE FUCK??")
+                    };
                 }
             }
 

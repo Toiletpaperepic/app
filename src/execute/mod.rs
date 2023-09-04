@@ -66,7 +66,7 @@ pub(crate) fn start_qemu(number: usize, vms: &State<VirtualMachines>) -> Value {
 
             match &vmid.destination {
                 #[cfg(unix)]
-                Destination::Unix(path) => args.push(format!("unix:{}", path.display().to_string())),
+                Destination::Unix(path) => args.push(format!("unix:{}", path.display())),
                 Destination::Tcp(port) => args.push(format!(":{}", port.port()))
             }
             

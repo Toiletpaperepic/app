@@ -62,15 +62,9 @@ mod tests {
     use crate::{config::vmids::new::{self, DestinationOption}, Error};
     use super::{load_pool, new_pool};
     use std::{path::PathBuf, fs};
-    
-    fn init() {
-        let _ = env_logger::builder().is_test(true).try_init();
-    }
 
     #[test]
     fn new_pool_test() -> Result<(), Error> {
-        init();
-
         let path = PathBuf::from("./pool/test/1");
 
         if path.clone().exists() {
@@ -85,8 +79,6 @@ mod tests {
 
     #[test]
     fn load_pool_test() -> Result<(), Error> {
-        init();
-
         let path = PathBuf::from("./pool/test/2");
 
         if path.clone().exists() {
