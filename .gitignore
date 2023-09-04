@@ -1,9 +1,10 @@
-/target
 /install/target
 /install/dir
-*.pem
-Cargo.lock
+/target
 /packup
 /pool
-*.exe
 install-posix
+.Cargo.lock
+*.exe
+*.pem
+Cargo.lock
