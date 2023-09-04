@@ -1,3 +1,9 @@
+#kill {
+  background-color: rgba(255, 0, 0, 0.205);
+}
+#kill:hover:not(.active) {
+  background-color: red;
+}
 a,p {
   color: rgb(255, 255, 255);
   font-size: small;
@@ -19,7 +25,7 @@ li a {
   padding: 14px 16px;
   text-decoration: none;
 }
-li a:hover:not(.active) {
+.nav:hover:not(.active) {
   background-color: #111;
 }
 .active {

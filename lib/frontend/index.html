@@ -9,10 +9,10 @@
     </head>
     <body>
         <ul>
-            <li><a href="default.asp">placeholder</a></li>
-            <li><a onclick="vm_renderer.kill = true">Stop</a></li>
-            <li><a href="default.asp">placeholder</a></li>
-            <li><a href="default.asp">placeholder</a></li>
+            <li class="nav"><a href="/">placeholder</a></li>
+            <li id="kill"><a onclick="vm_renderer.killSet(true)">Stop</a></li>
+            <li class="nav"><a onclick="vm_renderer.reload()">reload</a></li>
+            <li class="nav"><a href="/">placeholder</a></li>
         </ul> 
         <div id="app"></div>
         <div id="row"></div>

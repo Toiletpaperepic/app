@@ -5,6 +5,7 @@ use super::Vmid;
 #[cfg(unix)]
 use std::path::PathBuf;
 
+#[derive(Debug)]
 pub(crate) enum DestinationOption{
     #[cfg(unix)]
     Unix(PathBuf),

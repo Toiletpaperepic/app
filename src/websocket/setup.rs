@@ -1,4 +1,4 @@
-use crate::{config::vmids::{new::{self, DestinationOption}, Vmid}, pool::new_pool, execute::VirtualMachines, websocket::stream::Destination};
+use crate::{config::vmids::{new::{self, DestinationOption}, Vmid}, pool::{new_pool, load_pool}, execute::VirtualMachines, websocket::stream::Destination};
 use rocket::{futures::{StreamExt, SinkExt}, State};
 use clap::{Command, arg, value_parser};
 use std::{path::PathBuf, net::SocketAddr};
@@ -6,6 +6,7 @@ use rocket::Shutdown;
 
 enum Commands {
     Quit,
+    Load,
     SaveVmid(Vmid),
     Message(String),
     SaveVmidVec(Vec<Vmid>),
@@ -40,6 +41,9 @@ pub(crate) fn console(ws: ws::WebSocket, shutdown: Shutdown , vms: &State<Virtua
                 }
                 Ok(Commands::SaveVmidVec(mut vmidvec)) => {
                     vmids.append(&mut vmidvec)
+                }
+                Ok(Commands::Load) => {
+                    vmids.append(&mut load_pool(vms.config.pool.clone().unwrap_or_else(|| PathBuf::from("./pool"))).unwrap());
                 }
                 Err(err) => {
                     error!("{}", err);
@@ -91,8 +95,8 @@ fn respond(line: &str, next_id: usize/*, mut channel: DuplexStream*/) -> Result<
             Ok(Commands::SaveVmidVec(new::vmid(destination_option, *vmids).map_err(|e| format!("{:?}", e))?))
         }
         Some(("new", matches)) | Some(("init", matches)) => {
-            let port = **matches.get_one::<u16>("port").get_or_insert(&0);
-            let vmid = **matches.get_one::<usize>("vmid").get_or_insert(&next_id);
+            let port = *matches.get_one::<u16>("port").unwrap();
+            let vmid = *matches.get_one::<usize>("vmid").unwrap_or(&next_id);
             let name = matches.get_one::<String>("name").ok_or("`name`is required".to_string())?.to_string();
             let args = matches.get_many::<String>("args").ok_or("`args`is required".to_string())?.map(|vals| vals.to_owned()).collect::<Vec<_>>();
 
@@ -105,6 +109,9 @@ fn respond(line: &str, next_id: usize/*, mut channel: DuplexStream*/) -> Result<
                 password: None,
                 path: None,
             }))
+        }
+        Some(("load", _matches)) => {
+            Ok(Commands::Load)
         }
         Some(("ping", _matches)) => {
             Ok(Commands::Message("Pong".to_string()))
@@ -185,6 +192,9 @@ fn cli() -> Command {
             Command::new("quit")
                 .alias("exit")
                 .about("Quit the REPL")
+                .help_template(APPLET_TEMPLATE),
+            Command::new("load")
+                .about("load the existing pool")
                 .help_template(APPLET_TEMPLATE),
             ]
         )

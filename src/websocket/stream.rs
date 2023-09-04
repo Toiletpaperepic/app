@@ -1,14 +1,14 @@
 use rocket::{tokio::{net::TcpStream, io::{AsyncReadExt, AsyncWriteExt}}, futures::{StreamExt, SinkExt}, State};
-use std::{io::{self, ErrorKind, Error}, sync::{Mutex, Arc}, net::SocketAddr};
+use std::{io::{self, ErrorKind, Error}, sync::{Arc, RwLock}, net::SocketAddr};
 use crate::{execute::VirtualMachines, config::vmids::Vmid};
-use serde::{Deserialize, Serialize};
 use ws::{Message, stream::DuplexStream};
+use serde::{Deserialize, Serialize};
 #[cfg(unix)]
 use rocket::tokio::net::UnixStream;
 #[cfg(unix)]
 use std::path::PathBuf;
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, PartialEq, Debug, Clone)]
 pub enum Destination {
     /// Connect to TCP
     Tcp(SocketAddr),
@@ -18,24 +18,35 @@ pub enum Destination {
     Unix(PathBuf),
 }
 
+impl Destination {
+    fn to_string(&self) -> String {
+        match self {
+            #[cfg(unix)]
+            Destination::Unix(unix) => unix.display().to_string(),
+            Destination::Tcp(tcp) => tcp.to_string(),
+        }
+    }
+}
+
 #[get("/stream/<streamfrom>")]
 pub(crate) async fn stream(ws: ws::WebSocket, streamfrom: usize, vms: &State<VirtualMachines>) -> Result<ws::Channel<'static>, Error> {
     let buffer: Vec<u8> = vec![0; *vms.config.stream_buffer.clone().get_or_insert(10000)];
     let stream = getaddr(streamfrom, vms.virtual_machines.clone())?;
 
-    //why is this the only way that i can get it to work.
+    info!("{}", stream.to_string());
+
     match stream {
         Destination::Tcp(stream) => {
             let mut stream = TcpStream::connect(stream).await?;
             Ok(ws.channel(move |channel| {
-                Box::pin(async move { handle_connection(channel, buffer, &mut stream).await.unwrap(); Ok(()) })
+                Box::pin(async move { handle_connection(channel, buffer, &mut stream).await })
             }))
         },
         #[cfg(unix)]
         Destination::Unix(stream) => {
             let mut stream = UnixStream::connect(stream).await?;
             Ok(ws.channel(move |channel| {
-                Box::pin(async move { handle_connection(channel, buffer, &mut stream).await.unwrap(); Ok(()) })
+                Box::pin(async move { handle_connection(channel, buffer, &mut stream).await })
             }))
         },
     }
@@ -75,9 +86,9 @@ async fn handle_connection(
 }
 
 
-fn getaddr(streamfrom: usize, virtual_machines: Vec<Arc<Mutex<Vmid>>>) -> io::Result<Destination> {
+fn getaddr(streamfrom: usize, virtual_machines: Vec<Arc<RwLock<Vmid>>>) -> io::Result<Destination> {
     if virtual_machines.len() > streamfrom {
-        let vmid = &virtual_machines[streamfrom].lock().unwrap();
+        let vmid = &virtual_machines[streamfrom].read().unwrap();
 
         Ok(vmid.destination.clone())
     } else {
@@ -85,18 +96,18 @@ fn getaddr(streamfrom: usize, virtual_machines: Vec<Arc<Mutex<Vmid>>>) -> io::Re
     }
 }
 
-// #[test]
-// fn test() -> Result<(), Error> {
-//     use crate::config::vmids::new;
-//     let vmid = new::vmid(5900)?.into_iter().map(|vals| Arc::new(Mutex::new(vals))).collect::<Vec<_>>();
+#[test]
+fn test() -> Result<(), crate::Error> {
+    use crate::config::vmids::new;
+    let vmid = new::vmid(new::DestinationOption::Tcp(5900), 4)?.into_iter().map(|vals| Arc::from(RwLock::from(vals))).collect::<Vec<_>>();
 
-//     //test 0
-//     assert_eq!(getaddr(0, vmid.clone()).unwrap(), SocketAddr::from(([127, 0, 0, 1], 5900)));
+    //test 0
+    assert_eq!(getaddr(0, vmid.clone()).unwrap(), Destination::Tcp(SocketAddr::from(([127, 0, 0, 1], 5900))));
 
-//     //test 4
-//     assert_eq!(getaddr(3, vmid.clone()).unwrap(), SocketAddr::from(([127, 0, 0, 1], 5903)));
+    //test 4
+    assert_eq!(getaddr(3, vmid.clone()).unwrap(), Destination::Tcp(SocketAddr::from(([127, 0, 0, 1], 5903))));
 
-//     assert_eq!(getaddr(10, vmid.clone()).unwrap_err().to_string(), "The Requested VM Doesn't exist.".to_string());
-//     drop(vmid);
-//     Ok(())
-// }
+    assert_eq!(getaddr(10, vmid.clone()).unwrap_err().to_string(), "The Requested VM Doesn't exist.".to_string());
+    drop(vmid);
+    Ok(())
+}
